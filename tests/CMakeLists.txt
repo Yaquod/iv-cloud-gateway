@@ -1,29 +1,31 @@
 file(GLOB_RECURSE UNIT_TEST_SOURCES "unit/**/*_test.cpp")
 
-add_executable(gateway_unit_tests
+add_executable(gateway_tests
         test_main.cpp
         ${UNIT_TEST_SOURCES}
 )
 
-target_include_directories(gateway_unit_tests
+target_include_directories(gateway_tests
         PRIVATE
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/tests/mocks
 )
 
-target_link_libraries(gateway_unit_tests
+target_link_libraries(gateway_tests
         PRIVATE
         gateway_lib
-        gtest
-        gmock
-        gtest_main
+        GTest::gtest
+        GTest::gmock
+        GTest::gtest_main
 )
 
-# Discover tests
 include(GoogleTest)
-gtest_discover_tests(gateway_unit_tests)
+gtest_discover_tests(gateway_tests
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        PROPERTIES
+        TIMEOUT 60
+)
 
-# Integration Tests
 if(BUILD_INTEGRATION_TESTS)
     file(GLOB_RECURSE INTEGRATION_TEST_SOURCES "integration/**/*_test.cpp")
 
@@ -40,10 +42,12 @@ if(BUILD_INTEGRATION_TESTS)
     target_link_libraries(gateway_integration_tests
             PRIVATE
             gateway_lib
-            gtest
-            gmock
-            gtest_main
+            GTest::gtest
+            GTest::gmock
+            GTest::gtest_main
     )
 
-    gtest_discover_tests(gateway_integration_tests)
+    gtest_discover_tests(gateway_integration_tests
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
 endif()

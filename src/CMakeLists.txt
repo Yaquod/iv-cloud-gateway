@@ -3,22 +3,30 @@ add_subdirectory(mqtt_client)
 
 add_library(gateway_lib STATIC
         gateway.cpp
-        $<TARGET_OBJECTS:http_client>
-        $<TARGET_OBJECTS:mqtt_client>
+        $<TARGET_OBJECTS:http_client_lib>
+        $<TARGET_OBJECTS:mqtt_client_lib>
 )
 
-target_include_directories(gateway_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(gateway_lib
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 target_link_libraries(gateway_lib
         PUBLIC
-        grpc_cpp
-        mqtt
+        proto_lib
+        gRPC::grpc++
+        mqtt_client
+        Boost::system
+        Boost::thread
+        nlohmann_json::nlohmann_json
         OpenSSL::SSL
         OpenSSL::Crypto
-        ZLIB::ZLIB
         spdlog::spdlog
         yaml-cpp
-        proto_lib
         PRIVATE
         Threads::Threads
         ${CMAKE_DL_LIBS}
@@ -26,4 +34,9 @@ target_link_libraries(gateway_lib
 
 set_target_properties(gateway_lib PROPERTIES
     POSITION_INDEPENDENT_CODE ON
+)
+
+target_compile_options(gateway_lib PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )

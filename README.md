@@ -11,20 +11,42 @@ The Vehicle Cloud Gateway serves as a critical middleware component in the Yaquo
 ### Ubuntu
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y \
+# Update package list and install all dependencies
+sudo apt-get update && sudo apt-get install -y \
     build-essential \
     cmake \
+    git \
+    pkg-config \
+    ninja-build \
     libssl-dev \
     zlib1g-dev \
-    libspdlog-dev \
-    libyaml-cpp-dev
+    libgrpc++-dev \
+    libprotobuf-dev \
+    protobuf-compiler-grpc \
+    protobuf-compiler \
+    libpaho-mqtt-dev \
+    libpaho-mqttpp-dev \
+    libboost-system-dev \
+    libboost-thread-dev
 ```
 
 ### Fedora
 
 ```bash
-sudo dnf install spdlog-devel openssl-devel zlib-devel yaml-cpp-devel
+sudo dnf install -y \
+    gcc-c++ \
+    cmake \
+    git \
+    pkg-config \
+    ninja-build \
+    openssl-devel \
+    zlib-devel \
+    grpc-devel \
+    grpc-plugins \
+    protobuf-devel \
+    boost-devel \
+    paho-c-devel \
+    paho-cpp-devel
 ```
 
 ## Building the Project
@@ -34,7 +56,8 @@ sudo dnf install spdlog-devel openssl-devel zlib-devel yaml-cpp-devel
 Clone the repository with submodules (required for third-party dependencies):
 
 ```bash
-git clone --recursive https://github.com/Yaquod/iv-cloud-gateway.git
+git clgit clone --recursive https://github.com/Yaquod/iv-cloud-gateway.git
+one --recursive https://github.com/Yaquod/iv-cloud-gateway.git
 cd iv-cloud-gateway
 ```
 
