@@ -4,7 +4,7 @@ A dedicated communication bridge between the vehicle's internal systems (like th
 
 ## Overview
 
-The Vehicle Cloud Gateway serves as a critical middleware component in the Yaquod autonomous vehicle system. It provides.
+The Vehicle Cloud Gateway serves as a critical middleware component in the Yaquod autonomous vehicle system. It provides secure and reliable data transmission between the vehicle and the cloud, protocol translation, message routing, and ensures that commands and telemetry are delivered efficiently and safely.
 
 ## Prerequisites
 
