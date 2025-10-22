@@ -1,5 +1,5 @@
-//
-// Created by benwafdy on 10/22/25.
+// Yaqoud 2025-2026
+// Ahmed Wafdy 2025
 //
 
 #ifndef IV_CLOUD_GATEWAY_HTTP_CLIENT_H

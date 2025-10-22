@@ -31,9 +31,17 @@ sudo dnf install spdlog-devel openssl-devel zlib-devel yaml-cpp-devel
 
 ### 1. Clone the Repository
 
+Clone the repository with submodules (required for third-party dependencies):
+
 ```bash
-git clone <repository-url>
+git clone --recursive https://github.com/Yaquod/iv-cloud-gateway.git
 cd iv-cloud-gateway
+```
+
+If you've already cloned without `--recursive`, initialize the submodules:
+
+```bash
+git submodule update --init --recursive
 ```
 
 ### 2. Create Build Directory
