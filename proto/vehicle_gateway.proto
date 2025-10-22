@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package vehicle_gateway;
+
+service VehicleGateway {
+  rpc SendTelemetry(TelemetryRequest) returns (TelemetryResponse);
+  rpc SendStatus(StatusRequest) returns (StatusResponse);
+  rpc ReceiveCommand(CommandRequest) returns (CommandResponse);
+}
+
+message TelemetryRequest {
+  string vehicle_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  double speed = 4;
+  int64 timestamp = 5;
+}
+
+message TelemetryResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message StatusRequest {
+  string vehicle_id = 1;
+  string status = 2;
+  int64 timestamp = 3;
+}
+
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CommandRequest {
+  string command_type = 1;
+  string payload = 2;
+}
+
+message CommandResponse {
+  bool success = 1;
+  string result = 2;
+}
