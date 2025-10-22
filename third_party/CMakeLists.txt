@@ -1,0 +1,63 @@
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS  OFF CACHE BOOL "" FORCE)
+
+# Boost
+add_library(boost INTERFACE)
+target_include_directories(boost INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/boost")
+
+# nlohmann_json
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+set(JSON_Install OFF CACHE BOOL "" FORCE)
+add_subdirectory(json EXCLUDE_FROM_ALL)
+
+# Google Test
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(INSTALL_GTESTS OFF CACHE BOOL "" FORCE)
+add_subdirectory(googletest EXCLUDE_FROM_ALL)
+
+# Abseil Libraries required for gRPC
+set(ABSL_PROPAGATE_CXX_STD ON CACHE BOOL "" FORCE)
+set(ABSL_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(abseil-cpp EXCLUDE_FROM_ALL)
+
+# RE2 required for gRPC
+set(RE2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(RE2_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(re2 EXCLUDE_FROM_ALL)
+
+# gRPC (includes protobuf)
+set(gRPC_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(gRPC_BUILD_CSHARP_EXT OFF CACHE BOOL "" FORCE)
+set(gRPC_BUILD_GRPC_CSHARP_PLUGIN OFF CACHE BOOL "" FORCE)
+set(gRPC_BUILD_GRPC_NODE_PLUGIN OFF CACHE BOOL "" FORCE)
+set(gRPC_BUILD_GRPC_PHP_PLUGIN OFF CACHE BOOL "" FORCE)
+set(gRPC_BUILD_GRPC_RUBY_PLUGIN OFF CACHE BOOL "" FORCE)
+set(gRPC_BUILD_GRPC_PYTHON_PLUGIN OFF CACHE BOOL "" FORCE)
+set(gRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN OFF CACHE BOOL "" FORCE)
+set(gRPC_INSTALL OFF CACHE BOOL "" FORCE)
+set(protobuf_INSTALL OFF CACHE BOOL "" FORCE)
+set(utf8_range_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+set(gRPC_ABSL_PROVIDER "package" CACHE STRING "" FORCE)
+set(gRPC_RE2_PROVIDER "package" CACHE STRING "" FORCE)
+set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "" FORCE)
+set(gRPC_SSL_PROVIDER "package" CACHE STRING "" FORCE)
+set(gRPC_ZLIB_PROVIDER "package" CACHE STRING "" FORCE)
+add_subdirectory(grpc EXCLUDE_FROM_ALL)
+
+# MQTT C++ (includes bundled MQTT C)
+set(PAHO_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(PAHO_BUILD_DOCUMENTATION OFF CACHE BOOL "" FORCE)
+set(PAHO_BUILD_STATIC ON CACHE BOOL "" FORCE)
+set(PAHO_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(PAHO_WITH_SSL OFF CACHE BOOL "" FORCE)
+set(PAHO_WITH_MQTT_C ON CACHE BOOL "" FORCE)
+set(PAHO_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+add_subdirectory(paho.mqtt.cpp EXCLUDE_FROM_ALL)
+
+# Create libraries interfaces
+add_library(grpc_cpp INTERFACE)
+target_link_libraries(grpc_cpp INTERFACE grpc++ grpc++_reflection protobuf::libprotobuf)
+
+add_library(mqtt INTERFACE)
+target_link_libraries(mqtt INTERFACE paho-mqttpp3-static paho-mqtt3a-static)

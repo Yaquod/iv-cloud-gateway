@@ -1,0 +1,8 @@
+//
+// Created by benwafdy on 10/22/25.
+//
+
+#ifndef IV_CLOUD_GATEWAY_HTTP_CLIENT_H
+#define IV_CLOUD_GATEWAY_HTTP_CLIENT_H
+
+#endif //IV_CLOUD_GATEWAY_HTTP_CLIENT_H
