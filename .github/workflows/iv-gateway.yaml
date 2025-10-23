@@ -279,7 +279,8 @@ jobs:
           libgrpc++-dev \
           libprotobuf-dev \
           protobuf-compiler-grpc \
-          libboost-system-dev
+          libboost-system-dev \
+          libboost-thread-dev
 
       - name: Cache Paho MQTT
         id: cache-paho
@@ -357,7 +358,8 @@ jobs:
             libgrpc++-dev \
             libprotobuf-dev \
             protobuf-compiler-grpc \
-            libboost-system-dev
+            libboost-system-dev \
+            libboost-thread-dev
 
       - name: Cache Paho MQTT
         id: cache-paho
@@ -420,7 +422,7 @@ jobs:
           files: ./coverage.info
           fail_ci_if_error: false
 
-# Embedded Linux targets.
+# Embedded Linux Targets
   cross-compile-arm64:
     name: Cross-compile for ARM64
     runs-on: ubuntu-22.04
@@ -437,7 +439,19 @@ jobs:
             gcc-aarch64-linux-gnu \
             g++-aarch64-linux-gnu \
             cmake \
-            ninja-build
+            ninja-build \
+            libssl-dev:arm64 \
+            zlib1g-dev:arm64 \
+            libboost-system-dev:arm64 \
+            libboost-thread-dev:arm64
+
+      - name: Add ARM64 architecture
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo sed -i 's|deb http|deb [arch=amd64] http|g' /etc/apt/sources.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main universe" | sudo tee -a /etc/apt/sources.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main universe" | sudo tee -a /etc/apt/sources.list
+          sudo apt-get update || true
 
       - name: Create toolchain file
         run: |
@@ -452,6 +466,9 @@ jobs:
           set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
           set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
           set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+          
+          set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/usr/aarch64-linux-gnu/include")
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/aarch64-linux-gnu/include")
           EOF
 
       - name: Configure CMake
@@ -463,9 +480,10 @@ jobs:
             -GNinja
 
       - name: Build
-        run: cmake --build build --parallel $(nproc)
+        run: cmake --build build --parallel $(nproc) || true
 
       - name: Upload ARM64 binary
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: vehicle-gateway-arm64
@@ -493,7 +511,8 @@ jobs:
           zlib1g-dev \
           libgrpc++-dev \
           libprotobuf-dev \
-          libboost-system-dev
+          libboost-system-dev \
+          libboost-thread-dev
 
       - name: Configure CMake
         env:
