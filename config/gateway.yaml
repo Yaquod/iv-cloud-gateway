@@ -1,0 +1,47 @@
+# MQTT Broker Settings
+mqtt:
+  broker_address: "tcp://localhost:1883"
+  client_id: "vehicle_gateway"
+  username: ""
+  password: ""
+  qos: 1
+  keep_alive_interval: 60
+  clean_session: true
+  topics:
+    subscribe:
+      - "vehicle/+/telemetry"
+      - "vehicle/+/command"
+    publish:
+      - "gateway/status"
+
+# HTTP Backend Settings
+http:
+  base_url: "http://localhost:8080"
+  timeout: 30
+  retry_count: 3
+  endpoints:
+    telemetry: "/api/v1/telemetry"
+    command: "/api/v1/command"
+    status: "/api/v1/status"
+
+# gRPC Settings
+grpc:
+  server_address: "0.0.0.0:50051"
+  max_message_size: 4194304
+  enable_ssl: false
+  ssl_cert_path: ""
+  ssl_key_path: ""
+
+logging:
+  level: "info"
+  file_path: "/var/log/vehicle-gateway/gateway.log"
+  max_size: 10485760  # 10MB
+  max_files: 5
+
+# Gateway Settings
+gateway:
+  worker_threads: 4
+  queue_size: 1000
+  batch_size: 100
+  flush_interval: 5000
+
