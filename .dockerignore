@@ -1,0 +1,11 @@
+build/
+build*/
+cmake-build-*/
+.git/
+.github/
+.vscode/
+.idea/
+*.log
+*.md
+docs/
+tests/

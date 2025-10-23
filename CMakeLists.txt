@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
-cmake_policy(SET CMP0167 NEW)
+
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 project(VehicleCloudGateway VERSION 1.0.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
