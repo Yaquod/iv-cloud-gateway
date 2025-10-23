@@ -51,7 +51,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /workspace/build/vehicle_gateway /usr/local/bin/
-COPY config/gateway.yaml /etc/vehicle-gateway/
+
+RUN mkdir -p /etc/vehicle-gateway
+COPY config/gateway.yaml /etc/vehicle-gateway/ 2>/dev/null || true
 
 ENTRYPOINT ["/usr/local/bin/vehicle_gateway"]
 CMD ["--config", "/etc/vehicle-gateway/gateway.yaml"]
