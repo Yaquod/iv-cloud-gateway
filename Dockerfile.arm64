@@ -1,0 +1,57 @@
+FROM --platform=linux/arm64 ubuntu:22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    ninja-build \
+    git \
+    pkg-config \
+    libssl-dev \
+    zlib1g-dev \
+    libgrpc++-dev \
+    libprotobuf-dev \
+    protobuf-compiler-grpc \
+    libboost-system-dev \
+    libboost-thread-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN cd /tmp && \
+    git clone --depth 1 --branch v1.3.13 https://github.com/eclipse/paho.mqtt.c.git && \
+    cd paho.mqtt.c && \
+    cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_SHARED=ON \
+          -DPAHO_WITH_SSL=ON -DPAHO_ENABLE_TESTING=OFF -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    cd /tmp && \
+    git clone --depth 1 --branch v1.3.2 https://github.com/eclipse/paho.mqtt.cpp.git && \
+    cd paho.mqtt.cpp && \
+    cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_SHARED=ON \
+          -DPAHO_WITH_SSL=ON -DPAHO_BUILD_SAMPLES=OFF -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    ldconfig
+
+WORKDIR /workspace
+COPY . .
+
+RUN cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -GNinja && \
+    cmake --build build --parallel $(nproc) && \
+    strip build/vehicle_gateway
+
+FROM --platform=linux/arm64 ubuntu:22.04
+
+RUN apt-get update && apt-get install -y \
+    libssl3 \
+    libgrpc++1.43 \
+    libprotobuf23 \
+    libboost-system1.74.0 \
+    libboost-thread1.74.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /workspace/build/vehicle_gateway /usr/local/bin/
+COPY config/gateway.yaml /etc/vehicle-gateway/
+
+ENTRYPOINT ["/usr/local/bin/vehicle_gateway"]
+CMD ["--config", "/etc/vehicle-gateway/gateway.yaml"]
