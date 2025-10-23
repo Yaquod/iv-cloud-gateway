@@ -1,0 +1,455 @@
+name: iv-gateway
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - feat/*
+      - release/*
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format clang-tidy cppcheck
+
+      - name: Run Clang-Format
+        run: |
+          find src include tests -name '*.cpp' -o -name '*.h' | \
+          xargs clang-format --dry-run --Werror
+
+      - name: Run CPP-Check
+        run: |
+          cppcheck --enable=all --suppress=missingIncludeSystem \
+          --error-exitcode=1 src/ include/
+
+  build-ubuntu-22:
+    name: Build on Ubuntu 22.04
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        build_type: [ Debug, Release ]
+        compiler:
+          - { cc: gcc-11, cxx: g++-11 }
+          - { cc: gcc-12, cxx: g++-12 }
+          - { cc: clang-14, cxx: clang++-14 }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+                    sudo apt-get install -y \
+                      build-essential \
+                      cmake \
+                      ninja-build \
+                      pkg-config \
+                      libssl-dev \
+                      zlib1g-dev \
+                      libgrpc++-dev \
+                      libprotobuf-dev \
+                      protobuf-compiler-grpc \
+                      protobuf-compiler \
+                      libboost-system-dev \
+                      libboost-thread-dev \
+                      ${{ matrix.compiler.cc }} \
+                      ${{ matrix.compiler.cxx }}
+      - name: Install MQTT
+        run: |
+          cd /tmp
+          git clone --branch v1.3.13 https://github.com/eclipse/paho.mqtt.c.git
+          cd paho.mqtt.c
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_WITH_SSL=ON
+          cmake --build build
+          sudo cmake --install build
+
+          cd /tmp
+          git clone --branch v1.3.2 https://github.com/eclipse/paho.mqtt.cpp.git
+          cd paho.mqtt.cpp
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
+          cmake --build build
+          sudo cmake --install build
+
+      - name: Configure CMake
+        env:
+          CC: ${{ matrix.compiler.cc }}
+          CXX: ${{ matrix.compiler.cxx }}
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DBUILD_TESTS=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -GNinja
+
+      - name: Build
+        run: |
+          cmake --build build --parallel $(nproc)
+
+      - name: Run Tests
+        run: |
+          cd build
+          ctest --output-on-failure --parallel $(nproc)
+
+      - name: Upload build artifacts
+        if: matrix.build_type == 'Release' && matrix.compiler.cc == 'gcc-12'
+        uses: actions/upload-artifact@v4
+        with:
+            name: vehicle-gateway-ubuntu-22.04
+            path: build/vehicle_gateway
+            retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+            name: test-results-${{ matrix.build_type }}-${{ matrix.compiler.cc }}
+            path: build/Testing/
+            retention-days: 7
+
+  build-ubuntu-24:
+    name: Build on Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        build_type: [ Debug, Release ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+          build-essential \
+          cmake \
+          ninja-build \
+          pkg-config \
+          libssl-dev \
+          zlib1g-dev \
+          libgrpc++-dev \
+          libprotobuf-dev \
+          protobuf-compiler-grpc \
+          protobuf-compiler \
+          libboost-system-dev \
+          libboost-thread-dev \
+          libpaho-mqtt-dev \
+          libpaho-mqttpp-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DBUILD_TESTS=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -GNinja
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run Tests
+        run: |
+          cd build
+          ctest --output-on-failure --parallel $(nproc)
+
+  build-fedora:
+    name: Build on Fedora
+    runs-on: ubuntu-latest
+    container: fedora:42
+    strategy:
+      matrix:
+        build_type: [ Debug, Release ]
+
+    steps:
+      - name: Install Git
+        run: dnf install -y git
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          dnf install -y \
+          gcc-c++ \
+          cmake \
+          ninja-build \
+          pkg-config \
+          openssl-devel \
+          zlib-devel \
+          grpc-devel \
+          grpc-plugins \
+          protobuf-devel \
+          boost-devel \
+          paho-c-devel \
+          paho-cpp-devel
+
+      - name: Configure CMake
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DBUILD_TESTS=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -GNinja
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run Tests
+        run: |
+          cd build
+          ctest --output-on-failure --parallel $(nproc)
+
+      - name: Upload build artifacts
+        if: matrix.build_type == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vehicle-gateway-fedora
+          path: build/vehicle_gateway
+          retention-days: 7
+
+  sanitizers:
+    name: Sanitizers
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        sanitizer: [address, undefined, memory, thread]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+          build-essential \
+          cmake \
+          ninja-build \
+          clang-14 \
+          libssl-dev \
+          zlib1g-dev \
+          libgrpc++-dev \
+          libprotobuf-dev \
+          protobuf-compiler-grpc \
+          libboost-system-dev
+
+      - name: Install MQTT
+        run: |
+          cd /tmp
+          git clone --branch v1.3.13 https://github.com/eclipse/paho.mqtt.c.git
+          cd paho.mqtt.c
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
+          sudo cmake --install build
+
+          cd /tmp
+          git clone --branch v1.3.2 https://github.com/eclipse/paho.mqtt.cpp.git
+          cd paho.mqtt.cpp
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
+          sudo cmake --install build
+
+      - name: Configure CMake
+        env:
+          CC: clang-14
+          CXX: clang++-14
+        run: |
+          cmake -B build \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DENABLE_SANITIZERS=ON \
+          -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer" \
+          -DCMAKE_C_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer" \
+          -DBUILD_TESTS=ON \
+          -GNinja
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            lcov \
+            libssl-dev \
+            zlib1g-dev \
+            libgrpc++-dev \
+            libprotobuf-dev \
+            protobuf-compiler-grpc \
+            libboost-system-dev
+
+      - name: Install Paho MQTT
+        run: |
+          cd /tmp
+          git clone --branch v1.3.13 https://github.com/eclipse/paho.mqtt.c.git
+          cd paho.mqtt.c
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
+          sudo cmake --install build
+          
+          cd /tmp
+          git clone --branch v1.3.2 https://github.com/eclipse/paho.mqtt.cpp.git
+          cd paho.mqtt.cpp
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
+          sudo cmake --install build
+
+      - name: Configure CMake
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DENABLE_COVERAGE=ON \
+            -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+            -DBUILD_TESTS=ON \
+            -GNinja
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          lcov --capture --directory build --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/third_party/*' '*/tests/*' --output-file coverage.info
+          lcov --list coverage.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.info
+          fail_ci_if_error: false
+
+  # Embedded Linux
+  cross-compile-arm64:
+    name: Cross-compile for ARM64
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install cross compilation toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            cmake \
+            ninja-build
+
+      - name: Create toolchain file
+        run: |
+          cat > toolchain-arm64.cmake << 'EOF'
+          set(CMAKE_SYSTEM_NAME Linux)
+          set(CMAKE_SYSTEM_PROCESSOR aarch64)
+          
+          set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+          set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
+          
+          set(CMAKE_FIND_ROOT_PATH /usr/aarch64-linux-gnu)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+          set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+          EOF
+
+      - name: Configure CMake
+        run: |
+          cmake -B build \
+            -DCMAKE_TOOLCHAIN_FILE=toolchain-arm64.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTS=OFF \
+            -GNinja
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Upload ARM64 binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: vehicle-gateway-arm64
+          path: build/vehicle_gateway
+          retention-days: 7
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+          clang-tidy-14 \
+          clang-14 \
+          cmake \
+          ninja-build \
+          libssl-dev \
+          zlib1g-dev \
+          libgrpc++-dev \
+          libprotobuf-dev \
+          libboost-system-dev
+
+      - name: Install MQTT
+        env:
+          CC: clang-14
+          CXX: clang++-14
+        run: |
+          cmake -B build \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DBUILD_TESTS=OFF \
+          -GNinja
+
+      - name: Run clang-tidy
+        run: |
+          find src -name '*.cpp' | xargs clang-tidy-14 -p build
