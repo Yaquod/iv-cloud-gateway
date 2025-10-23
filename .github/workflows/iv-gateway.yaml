@@ -420,7 +420,7 @@ jobs:
           files: ./coverage.info
           fail_ci_if_error: false
 
-# Embedded Linux targets
+# Embedded Linux targets.
   cross-compile-arm64:
     name: Cross-compile for ARM64
     runs-on: ubuntu-22.04
