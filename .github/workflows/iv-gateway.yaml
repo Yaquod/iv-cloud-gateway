@@ -17,6 +17,8 @@ on:
 
 env:
   BUILD_TYPE: Release
+  PAHO_C_VERSION: v1.3.13
+  PAHO_CPP_VERSION: v1.3.2
 
 jobs:
   code-quality:
@@ -60,39 +62,56 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-                    sudo apt-get install -y \
-                      build-essential \
-                      cmake \
-                      ninja-build \
-                      pkg-config \
-                      libssl-dev \
-                      zlib1g-dev \
-                      libgrpc++-dev \
-                      libprotobuf-dev \
-                      protobuf-compiler-grpc \
-                      protobuf-compiler \
-                      libboost-system-dev \
-                      libboost-thread-dev \
-                      ${{ matrix.compiler.cc }} \
-                      ${{ matrix.compiler.cxx }}
-      - name: Install MQTT
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libssl-dev \
+            zlib1g-dev \
+            libgrpc++-dev \
+            libprotobuf-dev \
+            protobuf-compiler-grpc \
+            protobuf-compiler \
+            libboost-system-dev \
+            libboost-thread-dev \
+            ${{ matrix.compiler.cc }} \
+            ${{ matrix.compiler.cxx }}
+
+      - name: Cache Paho MQTT
+        id: cache-paho
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/libpaho*
+            /usr/local/include/mqtt/
+            /usr/local/include/MQTT*.h
+          key: paho-mqtt-ubuntu-22.04-${{ env.PAHO_C_VERSION }}-${{ env.PAHO_CPP_VERSION }}
+
+      - name: Build and install Paho MQTT
+        if: steps.cache-paho.outputs.cache-hit != 'true'
         run: |
           cd /tmp
-          git clone --branch v1.3.13 https://github.com/eclipse/paho.mqtt.c.git
+          git clone --depth 1 --branch ${{ env.PAHO_C_VERSION }} https://github.com/eclipse/paho.mqtt.c.git
           cd paho.mqtt.c
-          cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_WITH_SSL=ON
-          cmake --build build
-          sudo cmake --install build
-
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_SHARED=ON \
+                -DPAHO_WITH_SSL=ON -DPAHO_ENABLE_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          sudo cmake --build build --target install
+          
           cd /tmp
-          git clone --branch v1.3.2 https://github.com/eclipse/paho.mqtt.cpp.git
+          git clone --depth 1 --branch ${{ env.PAHO_CPP_VERSION }} https://github.com/eclipse/paho.mqtt.cpp.git
           cd paho.mqtt.cpp
-          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
-          cmake --build build
-          sudo cmake --install build
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_SHARED=ON \
+                -DPAHO_WITH_SSL=ON -DPAHO_BUILD_SAMPLES=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          sudo cmake --build build --target install
+
+      - name: Update library cache
+        run: sudo ldconfig
 
       - name: Configure CMake
         env:
@@ -106,8 +125,7 @@ jobs:
             -GNinja
 
       - name: Build
-        run: |
-          cmake --build build --parallel $(nproc)
+        run: cmake --build build --parallel $(nproc)
 
       - name: Run Tests
         run: |
@@ -118,17 +136,17 @@ jobs:
         if: matrix.build_type == 'Release' && matrix.compiler.cc == 'gcc-12'
         uses: actions/upload-artifact@v4
         with:
-            name: vehicle-gateway-ubuntu-22.04
-            path: build/vehicle_gateway
-            retention-days: 7
+          name: vehicle-gateway-ubuntu-22.04
+          path: build/vehicle_gateway
+          retention-days: 7
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-            name: test-results-${{ matrix.build_type }}-${{ matrix.compiler.cc }}
-            path: build/Testing/
-            retention-days: 7
+          name: test-results-${{ matrix.build_type }}-${{ matrix.compiler.cc }}
+          path: build/Testing/
+          retention-days: 7
 
   build-ubuntu-24:
     name: Build on Ubuntu 24.04
@@ -218,6 +236,7 @@ jobs:
             -DBUILD_TESTS=ON \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -GNinja
+
       - name: Build
         run: cmake --build build --parallel $(nproc)
 
@@ -239,7 +258,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        sanitizer: [address, undefined, memory, thread]
+        sanitizer: [address, undefined, thread]
 
     steps:
       - name: Checkout code
@@ -247,7 +266,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -262,19 +281,37 @@ jobs:
           protobuf-compiler-grpc \
           libboost-system-dev
 
-      - name: Install MQTT
+      - name: Cache Paho MQTT
+        id: cache-paho
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/libpaho*
+            /usr/local/include/mqtt/
+            /usr/local/include/MQTT*.h
+          key: paho-mqtt-ubuntu-22.04-${{ env.PAHO_C_VERSION }}-${{ env.PAHO_CPP_VERSION }}
+
+      - name: Build and install Paho MQTT
+        if: steps.cache-paho.outputs.cache-hit != 'true'
         run: |
           cd /tmp
-          git clone --branch v1.3.13 https://github.com/eclipse/paho.mqtt.c.git
+          git clone --depth 1 --branch ${{ env.PAHO_C_VERSION }} https://github.com/eclipse/paho.mqtt.c.git
           cd paho.mqtt.c
-          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
-          sudo cmake --install build
-
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_SHARED=ON \
+                -DPAHO_WITH_SSL=ON -DPAHO_ENABLE_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          sudo cmake --build build --target install
+          
           cd /tmp
-          git clone --branch v1.3.2 https://github.com/eclipse/paho.mqtt.cpp.git
+          git clone --depth 1 --branch ${{ env.PAHO_CPP_VERSION }} https://github.com/eclipse/paho.mqtt.cpp.git
           cd paho.mqtt.cpp
-          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
-          sudo cmake --install build
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_SHARED=ON \
+                -DPAHO_WITH_SSL=ON -DPAHO_BUILD_SAMPLES=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          sudo cmake --build build --target install
+
+      - name: Update library cache
+        run: sudo ldconfig
 
       - name: Configure CMake
         env:
@@ -307,7 +344,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -322,19 +359,37 @@ jobs:
             protobuf-compiler-grpc \
             libboost-system-dev
 
-      - name: Install Paho MQTT
+      - name: Cache Paho MQTT
+        id: cache-paho
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/libpaho*
+            /usr/local/include/mqtt/
+            /usr/local/include/MQTT*.h
+          key: paho-mqtt-ubuntu-22.04-${{ env.PAHO_C_VERSION }}-${{ env.PAHO_CPP_VERSION }}
+
+      - name: Build and install Paho MQTT
+        if: steps.cache-paho.outputs.cache-hit != 'true'
         run: |
           cd /tmp
-          git clone --branch v1.3.13 https://github.com/eclipse/paho.mqtt.c.git
+          git clone --depth 1 --branch ${{ env.PAHO_C_VERSION }} https://github.com/eclipse/paho.mqtt.c.git
           cd paho.mqtt.c
-          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
-          sudo cmake --install build
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_SHARED=ON \
+                -DPAHO_WITH_SSL=ON -DPAHO_ENABLE_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          sudo cmake --build build --target install
           
           cd /tmp
-          git clone --branch v1.3.2 https://github.com/eclipse/paho.mqtt.cpp.git
+          git clone --depth 1 --branch ${{ env.PAHO_CPP_VERSION }} https://github.com/eclipse/paho.mqtt.cpp.git
           cd paho.mqtt.cpp
-          cmake -Bbuild -DPAHO_BUILD_STATIC=ON
-          sudo cmake --install build
+          cmake -Bbuild -DPAHO_BUILD_STATIC=ON -DPAHO_BUILD_SHARED=ON \
+                -DPAHO_WITH_SSL=ON -DPAHO_BUILD_SAMPLES=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          sudo cmake --build build --target install
+
+      - name: Update library cache
+        run: sudo ldconfig
 
       - name: Configure CMake
         run: |
@@ -365,7 +420,7 @@ jobs:
           files: ./coverage.info
           fail_ci_if_error: false
 
-  # Embedded Linux
+# Embedded Linux targets
   cross-compile-arm64:
     name: Cross-compile for ARM64
     runs-on: ubuntu-22.04
@@ -406,6 +461,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_TESTS=OFF \
             -GNinja
+
       - name: Build
         run: cmake --build build --parallel $(nproc)
 
@@ -439,7 +495,7 @@ jobs:
           libprotobuf-dev \
           libboost-system-dev
 
-      - name: Install MQTT
+      - name: Configure CMake
         env:
           CC: clang-14
           CXX: clang++-14

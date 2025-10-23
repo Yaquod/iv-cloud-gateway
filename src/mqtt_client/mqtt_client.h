@@ -5,10 +5,6 @@
 #ifndef IV_CLOUD_GATEWAY_MQTT_CLIENT_H
 #define IV_CLOUD_GATEWAY_MQTT_CLIENT_H
 
+class mqtt_client {};
 
-class mqtt_client
-{
-};
-
-
-#endif //IV_CLOUD_GATEWAY_MQTT_CLIENT_H
+#endif  // IV_CLOUD_GATEWAY_MQTT_CLIENT_H
