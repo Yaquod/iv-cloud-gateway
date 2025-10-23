@@ -53,7 +53,6 @@ jobs:
       matrix:
         build_type: [ Debug, Release ]
         compiler:
-          - { cc: gcc-11, cxx: g++-11 }
           - { cc: gcc-12, cxx: g++-12 }
           - { cc: clang-14, cxx: clang++-14 }
     steps:
