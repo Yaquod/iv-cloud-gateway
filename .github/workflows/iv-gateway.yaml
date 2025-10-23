@@ -425,8 +425,8 @@ jobs:
 
 # Embedded Linux Targets
   build-arm64-docker:
-    name: Build ARM64 (Docker)
-    runs-on: ubuntu-22.04-arm
+    name: Build ARM64 Docker Image
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
