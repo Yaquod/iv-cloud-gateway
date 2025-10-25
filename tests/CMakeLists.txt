@@ -1,4 +1,4 @@
-file(GLOB_RECURSE UNIT_TEST_SOURCES "unit/**/*_test.cpp")
+file(GLOB_RECURSE UNIT_TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/unit/*_test.cpp")
 
 add_executable(gateway_tests
         test_main.cpp
