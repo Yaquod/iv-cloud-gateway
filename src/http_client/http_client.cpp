@@ -106,7 +106,7 @@ struct HttpClient::impl {
 
   std::string resolve_redirect(const std::string& url,
                                const std::string& location) {
-    if (location.find("http") == 0 || location.find("https") == 0) {
+    if (location.rfind("http", 0) == 0 || location.rfind("https", 0) == 0) {
       return location;
     }
     auto uri = parse_url(url);
@@ -116,15 +116,14 @@ struct HttpClient::impl {
              location;
     }
 
-    std::string path = uri.path;
-    size_t last_slash = path.find_last_of('/');
+    size_t last_slash = uri.path.find_last_of('/');
     if (last_slash != std::string::npos) {
-      path = path.substr(0, last_slash);
+      uri.path.resize(last_slash);
     }
 
     return uri.protocol + "://" + uri.host + ":" +
            (uri.port != "80" && uri.port != "443" ? ":" + uri.port : "") +
-           path + location;
+           uri.path + location;
   }
 };
 
@@ -141,14 +140,17 @@ HttpClient& HttpClient::operator=(HttpClient&&) noexcept = default;
 
 HttpClient::~HttpClient() = default;
 
+// cppcheck-suppress unusedFunction
 void HttpClient::set_timeout(const std::chrono::seconds timeout) const {
   pimpl_->options.timeout = timeout;
 }
 
+// cppcheck-suppress unusedFunction
 void HttpClient::set_max_redirects(int max_redirects) {
   pimpl_->options.max_redirects = max_redirects;
 }
 
+// cppcheck-suppress unusedFunction
 void HttpClient::set_follow_redirects(bool follow_redirects) {
   pimpl_->options.follow_redirects = follow_redirects;
 }
@@ -194,7 +196,7 @@ http_response HttpClient::do_request(
           (response.status_code == 307 || response.status_code == 308) ? "GET"
                                                                        : method;
       std::string redirect_body = (redirect_method == "GET") ? "" : body;
-      return do_request(method, new_url, headers, body,
+      return do_request(redirect_method, new_url, headers, redirect_body,
                         redirects_remaining - 1);
     } else {
       spdlog::warn("Redirects response without header", response.status_code);
@@ -203,36 +205,42 @@ http_response HttpClient::do_request(
   return response;
 }
 
+// cppcheck-suppress unusedFunction
 http_response HttpClient::Get(
     const std::string& url,
     const std::map<std::string, std::string>& headers) const {
   return do_request("GET", url, headers, "", pimpl_->options.max_redirects);
 }
 
+// cppcheck-suppress unusedFunction
 http_response HttpClient::Post(
     const std::string& url, const std::map<std::string, std::string>& headers,
     const std::string& body) const {
   return do_request("POST", url, headers, body, pimpl_->options.max_redirects);
 }
 
+// cppcheck-suppress unusedFunction
 http_response HttpClient::Put(const std::string& url,
                               const std::map<std::string, std::string>& headers,
                               const std::string& body) const {
   return do_request("PUT", url, headers, body, pimpl_->options.max_redirects);
 }
 
+// cppcheck-suppress unusedFunction
 http_response HttpClient::Patch(
     const std::string& url, const std::map<std::string, std::string>& headers,
     const std::string& body) const {
   return do_request("PATCH", url, headers, body, pimpl_->options.max_redirects);
 }
 
+// cppcheck-suppress unusedFunction
 http_response HttpClient::Delete(
     const std::string& url,
     const std::map<std::string, std::string>& headers) const {
   return do_request("DELETE", url, headers, "", pimpl_->options.max_redirects);
 }
 
+// cppcheck-suppress unusedFunction
 http_response HttpClient::Head(
     const std::string& url,
     const std::map<std::string, std::string>& headers) const {

@@ -10,6 +10,7 @@
 #include <boost/beast/http.hpp>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace beast = boost::beast;
@@ -19,8 +20,31 @@ using tcp = net::ip::tcp;
 
 namespace cloud_gateway {
 
-struct http_response;
-struct http_options;
+struct http_response {
+  int status_code;
+  std::string body;
+  std::map<std::string, std::string> headers;
+  bool success;
+  std::string error_message;
+
+  [[nodiscard]] bool is_redirect() const {
+    return status_code == 301 || status_code == 302 || status_code == 307 ||
+           status_code == 308;
+  }
+
+  std::optional<std::string> get_headers(const std::string& name) const {
+    auto it = headers.find(name);
+    return it != headers.end() ? std::optional<std::string>(it->second)
+                               : std::nullopt;
+  }
+};
+
+struct http_options {
+  std::chrono::seconds timeout{30};
+  int max_redirects{5};
+  bool follow_redirects{true};
+  std::map<std::string, std::string> default_headers;
+};
 
 class HttpClient {
  public:
@@ -77,32 +101,6 @@ class HttpClient {
       const std::string& method, const std::string& url,
       const std::map<std::string, std::string>& headers,
       const std::string& body, int redirects_remaining) const;
-};
-
-struct http_response {
-  int status_code;
-  std::string body;
-  std::map<std::string, std::string> headers;
-  bool success;
-  std::string error_message;
-
-  [[nodiscard]] bool is_redirect() const {
-    return status_code == 301 || status_code == 302 || status_code == 307 ||
-           status_code == 308;
-  }
-
-  std::optional<std::string> get_headers(const std::string& name) {
-    auto it = headers.find(name);
-    return it != headers.end() ? std::optional<std::string>(it->second)
-                               : std::nullopt;
-  }
-};
-
-struct http_options {
-  std::chrono::seconds timeout{30};
-  int max_redirects{5};
-  bool follow_redirects{true};
-  std::map<std::string, std::string> default_headers;
 };
 
 }  // namespace cloud_gateway

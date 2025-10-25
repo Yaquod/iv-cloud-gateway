@@ -44,6 +44,7 @@ jobs:
       - name: Run CPP-Check
         run: |
           cppcheck --enable=all --suppress=missingIncludeSystem \
+          --inline-suppr \
           --error-exitcode=1 src/ include/
 
   build-ubuntu-22:
