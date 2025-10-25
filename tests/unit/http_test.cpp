@@ -10,7 +10,7 @@ using namespace cloud_gateway;
 
 class HttpClientTest : public ::testing::Test {
  protected:
-  http_client client;
+  HttpClient client;
 };
 
 TEST_F(HttpClientTest, GetRequestTest) {

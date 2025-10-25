@@ -22,17 +22,17 @@ namespace cloud_gateway {
 struct http_response;
 struct http_options;
 
-class http_client {
+class HttpClient {
  public:
-  http_client();
-  explicit http_client(const http_options& options);
-  ~http_client();
+  HttpClient();
+  explicit HttpClient(const http_options& options);
+  ~HttpClient();
 
-  http_client(const http_client&) = delete;
-  http_client& operator=(const http_client&) = delete;
+  HttpClient(const HttpClient&) = delete;
+  HttpClient& operator=(const HttpClient&) = delete;
 
-  http_client(http_client&&) noexcept;
-  http_client& operator=(http_client&&) noexcept;
+  HttpClient(HttpClient&&) noexcept;
+  HttpClient& operator=(HttpClient&&) noexcept;
 
   [[nodiscard]] http_response Get(
       const std::string& url,

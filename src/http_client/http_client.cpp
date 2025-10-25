@@ -15,7 +15,7 @@
 
 namespace cloud_gateway {
 
-struct http_client::impl {
+struct HttpClient::impl {
   net::io_context ioc;
   http_options options;
 
@@ -128,32 +128,32 @@ struct http_client::impl {
   }
 };
 
-http_client::http_client() : pimpl_(std::make_unique<impl>()) {}
+HttpClient::HttpClient() : pimpl_(std::make_unique<impl>()) {}
 
-http_client::http_client(const http_options& options)
+HttpClient::HttpClient(const http_options& options)
     : pimpl_(std::make_unique<impl>()) {
   pimpl_->options = options;
 }
 
-http_client::http_client(http_client&&) noexcept = default;
+HttpClient::HttpClient(HttpClient&&) noexcept = default;
 
-http_client& http_client::operator=(http_client&&) noexcept = default;
+HttpClient& HttpClient::operator=(HttpClient&&) noexcept = default;
 
-http_client::~http_client() = default;
+HttpClient::~HttpClient() = default;
 
-void http_client::set_timeout(const std::chrono::seconds timeout) const {
+void HttpClient::set_timeout(const std::chrono::seconds timeout) const {
   pimpl_->options.timeout = timeout;
 }
 
-void http_client::set_max_redirects(int max_redirects) {
+void HttpClient::set_max_redirects(int max_redirects) {
   pimpl_->options.max_redirects = max_redirects;
 }
 
-void http_client::set_follow_redirects(bool follow_redirects) {
+void HttpClient::set_follow_redirects(bool follow_redirects) {
   pimpl_->options.follow_redirects = follow_redirects;
 }
 
-http_response http_client::do_request(
+http_response HttpClient::do_request(
     const std::string& method, const std::string& url,
     const std::map<std::string, std::string>& headers, const std::string& body,
     int redirects_remaining) const {
@@ -203,37 +203,37 @@ http_response http_client::do_request(
   return response;
 }
 
-http_response http_client::Get(
+http_response HttpClient::Get(
     const std::string& url,
     const std::map<std::string, std::string>& headers) const {
   return do_request("GET", url, headers, "", pimpl_->options.max_redirects);
 }
 
-http_response http_client::Post(
+http_response HttpClient::Post(
     const std::string& url, const std::map<std::string, std::string>& headers,
     const std::string& body) const {
   return do_request("POST", url, headers, body, pimpl_->options.max_redirects);
 }
 
-http_response http_client::Put(
-    const std::string& url, const std::map<std::string, std::string>& headers,
-    const std::string& body) const {
+http_response HttpClient::Put(const std::string& url,
+                              const std::map<std::string, std::string>& headers,
+                              const std::string& body) const {
   return do_request("PUT", url, headers, body, pimpl_->options.max_redirects);
 }
 
-http_response http_client::Patch(
+http_response HttpClient::Patch(
     const std::string& url, const std::map<std::string, std::string>& headers,
     const std::string& body) const {
   return do_request("PATCH", url, headers, body, pimpl_->options.max_redirects);
 }
 
-http_response http_client::Delete(
+http_response HttpClient::Delete(
     const std::string& url,
     const std::map<std::string, std::string>& headers) const {
   return do_request("DELETE", url, headers, "", pimpl_->options.max_redirects);
 }
 
-http_response http_client::Head(
+http_response HttpClient::Head(
     const std::string& url,
     const std::map<std::string, std::string>& headers) const {
   return do_request("HEAD", url, headers, "", pimpl_->options.max_redirects);

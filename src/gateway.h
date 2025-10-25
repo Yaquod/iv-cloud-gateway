@@ -10,6 +10,7 @@
 #include "http_client/http_client.h"
 #include "mqtt_client/mqtt_client.h"
 
+namespace cloud_gateway {
 class Gateway {
  public:
   Gateway();
@@ -22,4 +23,7 @@ class Gateway {
  private:
   std::unique_ptr<HttpClient> httpClient;
   std::unique_ptr<MqttClient> mqttClient;
+
+  void register_vehicle();
 };
+}  // namespace cloud_gateway
