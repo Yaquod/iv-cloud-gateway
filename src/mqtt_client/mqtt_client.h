@@ -5,6 +5,7 @@
 #ifndef IV_CLOUD_GATEWAY_MQTT_CLIENT_H
 #define IV_CLOUD_GATEWAY_MQTT_CLIENT_H
 
-class mqtt_client {};
-
+namespace cloud_gateway {
+class MqttClient {};
+}  // namespace cloud_gateway
 #endif  // IV_CLOUD_GATEWAY_MQTT_CLIENT_H
