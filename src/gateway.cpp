@@ -8,4 +8,5 @@
 
 #include "vehicle_gateway.grpc.pb.h"
 
+// cppcheck-suppress unusedFunction
 void cloud_gateway::Gateway::initialize() {}
