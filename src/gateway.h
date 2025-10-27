@@ -9,6 +9,7 @@
 
 #include "http_client/http_client.h"
 #include "mqtt_client/mqtt_client.h"
+#include "vehicle_gateway.grpc.pb.h"
 
 namespace cloud_gateway {
 class Gateway {
@@ -27,3 +28,5 @@ class Gateway {
   void register_vehicle();
 };
 }  // namespace cloud_gateway
+
+#endif

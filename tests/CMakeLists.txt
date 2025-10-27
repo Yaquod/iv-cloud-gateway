@@ -3,6 +3,7 @@ file(GLOB_RECURSE UNIT_TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/unit/*_test.cpp
 add_executable(gateway_tests
         test_main.cpp
         ${UNIT_TEST_SOURCES}
+        unit/mqtt_test.cpp
 )
 
 target_include_directories(gateway_tests

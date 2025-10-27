@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "../../src/http_client/http_client.h"
+#include "http_client/http_client.h"
 
 using namespace cloud_gateway;
 
