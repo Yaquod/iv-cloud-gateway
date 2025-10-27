@@ -36,11 +36,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-format clang-tidy cppcheck
 
-      - name: Generate protoc
-        run: |
-          protoc --proto_path=proto --grpc_out=src --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` proto/vehicle_gateway.proto
-          protoc --proto_path=proto --cpp_out=src proto/vehicle_gateway.proto
-
       - name: Run Clang-Format
         run: |
           find src include tests -name '*.cpp' -o -name '*.h' | \
@@ -518,6 +513,4 @@ jobs:
 
       - name: Run clang-tidy
         run: |
-          protoc --proto_path=proto --grpc_out=src --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` proto/vehicle_gateway.proto
-          protoc --proto_path=proto --cpp_out=src proto/vehicle_gateway.proto
           find src -name '*.cpp' | xargs clang-tidy-14 -p build
