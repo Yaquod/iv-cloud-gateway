@@ -1,3 +1,7 @@
+
+
+
+
 add_library(mqtt_client_lib OBJECT
         mqtt_client.cpp
         mqtt_client.h
@@ -6,6 +10,7 @@ add_library(mqtt_client_lib OBJECT
 target_include_directories(mqtt_client_lib
         PUBLIC ${CMAKE_SOURCE_DIR}/src
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+
 )
 
 target_link_libraries(mqtt_client_lib
