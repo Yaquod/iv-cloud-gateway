@@ -39,7 +39,7 @@ find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
 # Boost (only system and thread)
-find_package(Boost 1.65 REQUIRED COMPONENTS system thread)
+find_package(Boost 1.74 REQUIRED COMPONENTS system thread)
 
 # gRPC and Protobuf from system packages
 find_package(Protobuf REQUIRED)
