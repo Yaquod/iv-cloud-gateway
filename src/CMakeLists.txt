@@ -20,7 +20,6 @@ target_link_libraries(gateway_lib
         proto_lib
         gRPC::grpc++
         mqtt_client
-        Boost::system
         Boost::thread
         nlohmann_json::nlohmann_json
         OpenSSL::SSL

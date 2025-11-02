@@ -1,7 +1,3 @@
-
-
-
-
 add_library(mqtt_client_lib OBJECT
         mqtt_client.cpp
         mqtt_client.h

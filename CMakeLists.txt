@@ -4,6 +4,10 @@ if(POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
+if(POLICY CMP0144)
+    cmake_policy(SET CMP0144 NEW)
+endif()
+
 project(VehicleCloudGateway VERSION 1.0.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -38,8 +42,10 @@ find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
-# Boost (only system and thread)
-find_package(Boost 1.74 REQUIRED COMPONENTS system thread)
+# Boost - system is header-only
+set(Boost_ROOT /usr/local)
+set(Boost_NO_SYSTEM_PATHS OFF)
+find_package(Boost 1.89 REQUIRED COMPONENTS thread)
 
 # gRPC and Protobuf from system packages
 find_package(Protobuf REQUIRED)
