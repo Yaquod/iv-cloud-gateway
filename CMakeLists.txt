@@ -10,7 +10,7 @@ endif()
 
 project(VehicleCloudGateway VERSION 1.0.0 LANGUAGES CXX C)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -35,14 +35,10 @@ endif()
 
 message(STATUS "Finding system dependencies...")
 
-# Threading
 find_package(Threads REQUIRED)
-
-# OpenSSL and zlib
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
-# gRPC and Protobuf from system packages
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG QUIET)
 
@@ -66,19 +62,16 @@ if(NOT gRPC_FOUND)
         )
     endif()
 
-    # Find grpc_cpp_plugin
     find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin)
     if(NOT GRPC_CPP_PLUGIN)
         message(FATAL_ERROR "grpc_cpp_plugin not found")
     endif()
 
-    # Create target for plugin
     add_executable(gRPC::grpc_cpp_plugin IMPORTED)
     set_target_properties(gRPC::grpc_cpp_plugin PROPERTIES
             IMPORTED_LOCATION ${GRPC_CPP_PLUGIN}
     )
 endif()
-
 
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)
@@ -97,7 +90,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     )
 endif()
 
-# Tests
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
@@ -126,9 +118,9 @@ message(STATUS "System Dependencies:")
 message(STATUS "  Protobuf:        ${Protobuf_VERSION}")
 message(STATUS "  gRPC:            ${gRPC_VERSION}")
 message(STATUS "  OpenSSL:         ${OPENSSL_VERSION}")
-message(STATUS "  Boost 1.89.0 (MQTT5 support)")
 message(STATUS "")
 message(STATUS "Third-Party (built from source):")
+message(STATUS "  Boost 1.89.0 (MQTT5 support)")
 message(STATUS "  nlohmann/json")
 message(STATUS "  spdlog")
 message(STATUS "  yaml-cpp")
