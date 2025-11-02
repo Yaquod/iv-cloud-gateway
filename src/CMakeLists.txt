@@ -19,7 +19,7 @@ target_link_libraries(gateway_lib
         PUBLIC
         proto_lib
         gRPC::grpc++
-        mqtt_client
+        Boost::system
         Boost::thread
         nlohmann_json::nlohmann_json
         OpenSSL::SSL
@@ -32,7 +32,7 @@ target_link_libraries(gateway_lib
 )
 
 set_target_properties(gateway_lib PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
+        POSITION_INDEPENDENT_CODE ON
 )
 
 target_compile_options(gateway_lib PRIVATE

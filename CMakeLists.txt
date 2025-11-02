@@ -42,11 +42,6 @@ find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
-# Boost - system is header-only
-set(Boost_ROOT /usr/local)
-set(Boost_NO_SYSTEM_PATHS OFF)
-find_package(Boost 1.89 REQUIRED COMPONENTS thread)
-
 # gRPC and Protobuf from system packages
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG QUIET)
@@ -84,61 +79,6 @@ if(NOT gRPC_FOUND)
     )
 endif()
 
-# Paho MQTT (from system packages)
-message(STATUS "Finding Paho MQTT libraries...")
-
-# Find Paho MQTT C library
-find_library(PAHO_MQTT_C_LIB
-    NAMES paho-mqtt3as libpaho-mqtt3as
-    PATHS /usr/lib64 /usr/lib /usr/local/lib
-)
-
-# Find Paho MQTT C++ library
-find_library(PAHO_MQTT_CPP_LIB
-    NAMES paho-mqttpp3 libpaho-mqttpp3
-    PATHS /usr/lib64 /usr/lib /usr/local/lib
-)
-
-# Find Paho MQTT headers
-find_path(PAHO_MQTT_INCLUDE_DIR
-    NAMES mqtt/async_client.h
-    PATHS /usr/include /usr/local/include
-)
-
-if(NOT PAHO_MQTT_C_LIB)
-    message(FATAL_ERROR "Paho MQTT C library not found")
-endif()
-
-if(NOT PAHO_MQTT_CPP_LIB)
-    message(FATAL_ERROR "Paho MQTT C++ library not found")
-endif()
-
-if(NOT PAHO_MQTT_INCLUDE_DIR)
-    message(FATAL_ERROR "Paho MQTT headers not found")
-endif()
-
-message(STATUS "  Paho MQTT C:     ${PAHO_MQTT_C_LIB}")
-message(STATUS "  Paho MQTT C++:   ${PAHO_MQTT_CPP_LIB}")
-message(STATUS "  Paho MQTT Include: ${PAHO_MQTT_INCLUDE_DIR}")
-
-add_library(PahoMqttC SHARED IMPORTED)
-set_target_properties(PahoMqttC PROPERTIES
-    IMPORTED_LOCATION ${PAHO_MQTT_C_LIB}
-    INTERFACE_INCLUDE_DIRECTORIES ${PAHO_MQTT_INCLUDE_DIR}
-)
-
-add_library(PahoMqttCpp SHARED IMPORTED)
-set_target_properties(PahoMqttCpp PROPERTIES
-    IMPORTED_LOCATION ${PAHO_MQTT_CPP_LIB}
-    INTERFACE_INCLUDE_DIRECTORIES ${PAHO_MQTT_INCLUDE_DIR}
-    INTERFACE_LINK_LIBRARIES PahoMqttC
-)
-
-add_library(mqtt_client INTERFACE)
-target_link_libraries(mqtt_client INTERFACE
-        PahoMqttCpp
-        PahoMqttC
-)
 
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)
@@ -186,9 +126,7 @@ message(STATUS "System Dependencies:")
 message(STATUS "  Protobuf:        ${Protobuf_VERSION}")
 message(STATUS "  gRPC:            ${gRPC_VERSION}")
 message(STATUS "  OpenSSL:         ${OPENSSL_VERSION}")
-message(STATUS "  Boost:           ${Boost_VERSION}")
-message(STATUS "  Paho MQTT C:     ${PahoMqttC_VERSION}")
-message(STATUS "  Paho MQTT C++:   ${PahoMqttCpp_VERSION}")
+message(STATUS "  Boost 1.89.0 (MQTT5 support)")
 message(STATUS "")
 message(STATUS "Third-Party (built from source):")
 message(STATUS "  nlohmann/json")
