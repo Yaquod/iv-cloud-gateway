@@ -29,19 +29,24 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            clang-format \
-            clang-tidy \
-            cppcheck \
+            build-essential \
             cmake \
             ninja-build \
+            pkg-config \
+            libssl-dev \
+            zlib1g-dev \
             libgrpc++-dev \
             libprotobuf-dev \
             protobuf-compiler-grpc \
-            protobuf-compiler
+            protobuf-compiler \
+            libboost-system-dev \
+            libboost-thread-dev \
+            ${{ matrix.compiler.cc }} \
+            ${{ matrix.compiler.cxx }}
 
       - name: Generate proto files
         run: |
@@ -93,6 +98,8 @@ jobs:
             libprotobuf-dev \
             protobuf-compiler-grpc \
             protobuf-compiler \
+            libboost-system-dev \
+            libboost-thread-dev \
             ${{ matrix.compiler.cc }} \
             ${{ matrix.compiler.cxx }}
 
@@ -144,20 +151,24 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-          build-essential \
-          cmake \
-          ninja-build \
-          pkg-config \
-          libssl-dev \
-          zlib1g-dev \
-          libgrpc++-dev \
-          libprotobuf-dev \
-          protobuf-compiler-grpc \
-          protobuf-compiler
+            build-essential \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libssl-dev \
+            zlib1g-dev \
+            libgrpc++-dev \
+            libprotobuf-dev \
+            protobuf-compiler-grpc \
+            protobuf-compiler \
+            libboost-system-dev \
+            libboost-thread-dev \
+            ${{ matrix.compiler.cc }} \
+            ${{ matrix.compiler.cxx }}
 
       - name: Configure CMake
         run: |
@@ -200,6 +211,7 @@ jobs:
           ninja-build \
           pkg-config \
           openssl-devel \
+          boost-devel \
           zlib-devel \
           grpc-devel \
           grpc-plugins \
@@ -246,15 +258,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-          build-essential \
-          cmake \
-          ninja-build \
-          clang-14 \
-          libssl-dev \
-          zlib1g-dev \
-          libgrpc++-dev \
-          libprotobuf-dev \
-          protobuf-compiler-grpc
+            build-essential \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libssl-dev \
+            zlib1g-dev \
+            libgrpc++-dev \
+            libprotobuf-dev \
+            protobuf-compiler-grpc \
+            protobuf-compiler \
+            libboost-system-dev \
+            libboost-thread-dev \
+            ${{ matrix.compiler.cc }} \
+            ${{ matrix.compiler.cxx }}
 
       - name: Configure CMake
         env:
@@ -294,12 +311,17 @@ jobs:
             build-essential \
             cmake \
             ninja-build \
-            lcov \
+            pkg-config \
             libssl-dev \
             zlib1g-dev \
             libgrpc++-dev \
             libprotobuf-dev \
-            protobuf-compiler-grpc
+            protobuf-compiler-grpc \
+            protobuf-compiler \
+            libboost-system-dev \
+            libboost-thread-dev \
+            ${{ matrix.compiler.cc }} \
+            ${{ matrix.compiler.cxx }}
 
       - name: Configure CMake
         run: |
@@ -372,16 +394,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-          clang-tidy-14 \
-          clang-14 \
-          cmake \
-          ninja-build \
-          libssl-dev \
-          zlib1g-dev \
-          libgrpc++-dev \
-          libprotobuf-dev \
-          protobuf-compiler-grpc \
-          protobuf-compiler
+            build-essential \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libssl-dev \
+            zlib1g-dev \
+            libgrpc++-dev \
+            libprotobuf-dev \
+            protobuf-compiler-grpc \
+            protobuf-compiler \
+            libboost-system-dev \
+            libboost-thread-dev \
+            ${{ matrix.compiler.cc }} \
+            ${{ matrix.compiler.cxx }}
 
       - name: Generate proto files
         env:

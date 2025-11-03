@@ -5,12 +5,7 @@
 #ifndef IV_CLOUD_GATEWAY_MQTT_CLIENT_H
 #define IV_CLOUD_GATEWAY_MQTT_CLIENT_H
 
-#include <boost/asio/detached.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/mqtt5/logger.hpp>
-#include <boost/mqtt5/mqtt_client.hpp>
-#include <boost/mqtt5/reason_codes.hpp>
+#include <boost/mqtt5.hpp>
 #include <string>
 #include <thread>
 

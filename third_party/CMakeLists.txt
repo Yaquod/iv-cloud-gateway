@@ -5,21 +5,14 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 message(STATUS "Building third-party dependencies...")
 
 # ============================================================================
-# Boost
+# async_mqtt5 (header-only MQTT5 client)
 # ============================================================================
-message(STATUS "  - Boost 1.89.0")
-
-set(BOOST_INCLUDE_LIBRARIES
-        system
-        thread
-        chrono
-        date_time
-        context
-        CACHE STRING "" FORCE
+message(STATUS "  - async_mqtt5 (header-only MQTT5)")
+add_library(async_mqtt5 INTERFACE)
+target_include_directories(async_mqtt5 INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/async-mqtt5/include
 )
-
-set(BOOST_ENABLE_CMAKE ON CACHE BOOL "" FORCE)
-add_subdirectory(boost EXCLUDE_FROM_ALL)
+target_compile_features(async_mqtt5 INTERFACE cxx_std_17)
 
 # ============================================================================
 # nlohmann/json (header-only)
@@ -60,36 +53,5 @@ if(BUILD_TESTS)
     set(BUILD_GMOCK ON CACHE BOOL "" FORCE)
     add_subdirectory(googletest EXCLUDE_FROM_ALL)
 endif()
-
-# ============================================================================
-# Boost header-only wrapper libraries
-# ============================================================================
-
-# Boost::asio wrapper
-add_library(boost_asio_wrapper INTERFACE)
-target_include_directories(boost_asio_wrapper INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/boost/libs/asio/include
-)
-target_link_libraries(boost_asio_wrapper INTERFACE
-        Boost::system
-        Boost::thread
-        Boost::date_time
-        Boost::context
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        Threads::Threads
-)
-add_library(Boost::asio ALIAS boost_asio_wrapper)
-
-# Boost::beast wrapper
-add_library(boost_beast_wrapper INTERFACE)
-target_include_directories(boost_beast_wrapper INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/boost/libs/beast/include
-)
-target_link_libraries(boost_beast_wrapper INTERFACE
-        Boost::asio
-        Boost::system
-)
-add_library(Boost::beast ALIAS boost_beast_wrapper)
 
 message(STATUS "Third-party dependencies configured successfully")

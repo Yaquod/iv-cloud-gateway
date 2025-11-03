@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl-dev \
     zlib1g-dev \
+    libboost-system-dev \
+    libboost-thread-dev \
     libgrpc++-dev \
     libprotobuf-dev \
     protobuf-compiler-grpc \

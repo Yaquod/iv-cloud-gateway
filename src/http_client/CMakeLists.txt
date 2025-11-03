@@ -10,7 +10,6 @@ target_include_directories(http_client_lib
 
 target_link_libraries(http_client_lib
         PUBLIC
-        Boost::beast
         Boost::system
         Boost::thread
         OpenSSL::SSL

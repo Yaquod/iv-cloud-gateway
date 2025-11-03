@@ -39,13 +39,15 @@ find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
+# Boost from system (only need system, thread for Beast)
+find_package(Boost 1.74 REQUIRED COMPONENTS system thread)
+
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG QUIET)
 
 if(NOT gRPC_FOUND)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GRPC REQUIRED grpc++)
-    pkg_check_modules(GRPCPP REQUIRED grpc++>=1.16.0)
 
     if(NOT TARGET gRPC::grpc++)
         add_library(gRPC::grpc++ INTERFACE IMPORTED)
@@ -77,7 +79,6 @@ message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)
 
 add_subdirectory(proto)
-
 add_subdirectory(src)
 
 add_executable(vehicle_gateway src/main.cpp)
@@ -95,16 +96,11 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-install(TARGETS vehicle_gateway
-        RUNTIME DESTINATION bin)
-
-install(DIRECTORY config/
-        DESTINATION /etc/vehicle-gateway
-        FILES_MATCHING PATTERN "*.yaml")
+install(TARGETS vehicle_gateway RUNTIME DESTINATION bin)
+install(DIRECTORY config/ DESTINATION /etc/vehicle-gateway FILES_MATCHING PATTERN "*.yaml")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/systemd/vehicle-gateway.service")
-    install(FILES systemd/vehicle-gateway.service
-            DESTINATION /lib/systemd/system)
+    install(FILES systemd/vehicle-gateway.service DESTINATION /lib/systemd/system)
 endif()
 
 message(STATUS "==========================================")
@@ -116,11 +112,11 @@ message(STATUS "C++ Standard:      ${CMAKE_CXX_STANDARD}")
 message(STATUS "")
 message(STATUS "System Dependencies:")
 message(STATUS "  Protobuf:        ${Protobuf_VERSION}")
-message(STATUS "  gRPC:            ${gRPC_VERSION}")
 message(STATUS "  OpenSSL:         ${OPENSSL_VERSION}")
+message(STATUS "  Boost:           ${Boost_VERSION}")
 message(STATUS "")
 message(STATUS "Third-Party (built from source):")
-message(STATUS "  Boost 1.89.0 (MQTT5 support)")
+message(STATUS "  async_mqtt5 (MQTT5 client)")
 message(STATUS "  nlohmann/json")
 message(STATUS "  spdlog")
 message(STATUS "  yaml-cpp")
