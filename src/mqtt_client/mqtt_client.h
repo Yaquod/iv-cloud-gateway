@@ -12,8 +12,7 @@
 namespace cloud_gateway {
 class MqttClient {
  public:
-  MqttClient(const std::string& broker, uint16_t port,
-             const std::string& clientId);
+  MqttClient(std::string broker, uint16_t port, std::string clientId);
 
   void mqtt_connect();
   void mqtt_disconnect();
