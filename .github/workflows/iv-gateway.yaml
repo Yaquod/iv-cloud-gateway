@@ -30,7 +30,7 @@ jobs:
       - name: Run CPP-Check
         run: |
           cppcheck --enable=all --suppress=missingIncludeSystem \
-          --error-exitcode=1 src/
+          --error-exitcode=1 --quiet src/
       - name: Run clang-tidy
         run: |
           clang-tidy -p build $(find src -name '*.cpp') -- \
