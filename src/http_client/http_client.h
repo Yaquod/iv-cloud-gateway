@@ -32,7 +32,8 @@ struct http_response {
            status_code == 308;
   }
 
-  std::optional<std::string> get_headers(const std::string& name) const {
+  [[nodiscard]] std::optional<std::string> get_headers(
+      const std::string& name) const {
     auto it = headers.find(name);
     return it != headers.end() ? std::optional<std::string>(it->second)
                                : std::nullopt;

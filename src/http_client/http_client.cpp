@@ -24,13 +24,14 @@ struct HttpClient::impl {
     std::string path;
   };
 
-  Url parse_url(const std::string& url) {
+  static std::optional<Url> parse_url(const std::string& url) {
     // protocol://host:port/path?query#fragment
     std::regex re(
         R"(^(https?)://([^:/\?#]+)(?::(\d+))?([^\?#]*)?(?:\?([^#]*))?(?:#(.*))?$)");
     std::smatch match;
     if (!std::regex_match(url, match, re)) {
-      throw std::runtime_error("Invalid URL: " + url);
+      spdlog::error("Invalid URL format: {}", url);
+      return std::nullopt;
     }
     Url uri;
     uri.protocol = match[1];
@@ -191,8 +192,8 @@ struct HttpClient::impl {
     return response;
   }
 
-  std::string resolve_redirect(const std::string& url,
-                               const std::string& location) {
+  static std::string resolve_redirect(const std::string& url,
+                                      const std::string& location) {
     if (location.rfind("http://", 0) == 0 ||
         location.rfind("https://", 0) == 0) {
       return location;
@@ -201,22 +202,22 @@ struct HttpClient::impl {
     auto uri = parse_url(url);
 
     // Build base URL with optional port
-    std::string base_url = uri.protocol + "://" + uri.host;
+    std::string base_url = uri.value().protocol + "://" + uri.value().host;
 
-    if ((uri.protocol == "http" && uri.port != "80") ||
-        (uri.protocol == "https" && uri.port != "443")) {
-      base_url += ":" + uri.port;
+    if ((uri.value().protocol == "http" && uri.value().port != "80") ||
+        (uri.value().protocol == "https" && uri.value().port != "443")) {
+      base_url += ":" + uri.value().port;
     }
 
     if (!location.empty() && location[0] == '/') {
       return base_url + location;
     }
 
-    size_t last_slash = uri.path.find_last_of('/');
+    size_t last_slash = uri.value().path.find_last_of('/');
     std::string current_dir;
 
     if (last_slash != std::string::npos) {
-      current_dir = uri.path.substr(0, last_slash + 1);
+      current_dir = uri.value().path.substr(0, last_slash + 1);
     } else {
       current_dir = "/";
     }
@@ -257,10 +258,13 @@ http_response HttpClient::do_request(
     const std::string& method, const std::string& url,
     const std::map<std::string, std::string>& headers, const std::string& body,
     int redirects_remaining) const {
-  auto uri = pimpl_->parse_url(url);
+  auto uri = cloud_gateway::HttpClient::impl::parse_url(url);
+  if (!uri) {
+    return http_response{0, "", {}, false, "Invalid URL: " + url};
+  }
 
   // check for protocol
-  if (uri.protocol == "https") {
+  if (uri.value().protocol == "https") {
     spdlog::error("HTTPS not supported yet");
     return http_response{0, "", {}, false, "HTTPS not supported yet"};
   }
@@ -278,7 +282,7 @@ http_response HttpClient::do_request(
     verb = http::verb::head;
   }
 
-  auto response = pimpl_->do_request(uri, verb, body, headers);
+  auto response = pimpl_->do_request(uri.value(), verb, body, headers);
 
   // handle redirects
   if (pimpl_->options.follow_redirects && response.is_redirect() &&
