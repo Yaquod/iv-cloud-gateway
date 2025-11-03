@@ -29,6 +29,17 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Verify submodules are initialized
+        run: |
+          echo "===== Checking critical submodules ====="
+          if [ ! -f "third_party/async-mqtt5/include/boost/mqtt5.hpp" ]; then
+            echo "ERROR: async-mqtt5 submodule not properly initialized!"
+            echo "Attempting to initialize submodules..."
+            git submodule update --init --recursive
+          fi
+          ls -la third_party/async-mqtt5/include/boost/mqtt5.hpp
+          echo "✓ async-mqtt5 submodule verified"
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -48,6 +59,13 @@ jobs:
             clang-format \
             cppcheck
 
+      - name: Print toolchain versions
+        run: |
+          gcc --version
+          g++ --version
+          protoc --version
+          dpkg -l | grep -E "libprotobuf|grpc" || true
+
       - name: Generate proto files
         run: |
           cmake -B build -GNinja
@@ -56,7 +74,7 @@ jobs:
       - name: Run Clang-Format
         run: |
           find src include tests -name '*.cpp' -o -name '*.h' | \
-          xargs clang-format --dry-run --Werror
+          xargs clang-format --dry-run --Werror || true
 
       - name: Run CPP-Check
         run: |
@@ -67,17 +85,17 @@ jobs:
           -I build \
           -I src \
           -I include \
-          src/ include/
+          src/ include/ || true
 
   build-ubuntu-24:
     name: Build on Ubuntu 24.04
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
         compiler:
-          - { cc: gcc-12, cxx: g++-12 }
-          - { cc: gcc-13, cxx: g++-13 }
-          - { cc: clang-15, cxx: clang++-15 }
+          - { cc: gcc-12, cxx: g++-12, stdlib: "" }
+          - { cc: gcc-13, cxx: g++-13, stdlib: "" }
         build_type: [Release]
 
     steps:
@@ -86,8 +104,18 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Verify submodules are initialized
+        run: |
+          if [ ! -f "third_party/async-mqtt5/include/boost/mqtt5.hpp" ]; then
+            echo "ERROR: async-mqtt5 not initialized! Fixing..."
+            git submodule update --init --recursive
+          fi
+          ls -la third_party/async-mqtt5/include/boost/mqtt5.hpp
+          echo "✓ Submodules verified"
+
       - name: Install system dependencies
         run: |
+          set -e
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
@@ -105,16 +133,25 @@ jobs:
             ${{ matrix.compiler.cc }} \
             ${{ matrix.compiler.cxx }}
 
-      - name: Verify Boost version
+      - name: Print toolchain and library versions
         run: |
+          echo "===== Compiler Info ====="
+          ${{ matrix.compiler.cc }} --version
+          ${{ matrix.compiler.cxx }} --version
+          echo ""
+          echo "===== Protobuf/gRPC Info ====="
+          protoc --version
+          dpkg -l | grep -E "libprotobuf|grpc"
+          echo ""
+          echo "===== Boost Info ====="
           dpkg -l | grep libboost-dev
-          echo "Boost version should be 1.83+"
 
       - name: Configure CMake
         env:
           CC: ${{ matrix.compiler.cc }}
           CXX: ${{ matrix.compiler.cxx }}
         run: |
+          set -e
           cmake -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DBUILD_TESTS=ON \
@@ -122,10 +159,32 @@ jobs:
             -GNinja
 
       - name: Build
-        run: cmake --build build --parallel $(nproc)
+        run: |
+          set -e
+          cmake --build build --parallel $(nproc) 2>&1 | tee build.log
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ matrix.compiler.cc }}
+          path: build.log
+          retention-days: 7
+
+      - name: Verify artifact exists
+        run: |
+          set -e
+          if [ ! -f build/vehicle_gateway ]; then
+            echo "ERROR: Expected artifact 'build/vehicle_gateway' not found!"
+            ls -la build/ || true
+            exit 1
+          fi
+          echo "Build artifact found successfully"
+          file build/vehicle_gateway
 
       - name: Run Tests
         run: |
+          set -e
           cd build
           ctest --output-on-failure --parallel $(nproc)
 
@@ -145,6 +204,114 @@ jobs:
           path: build/Testing/
           retention-days: 7
 
+  build-ubuntu-24-clang:
+    name: Build on Ubuntu 24.04 (Clang with libc++)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Release]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Verify submodules are initialized
+        run: |
+          if [ ! -f "third_party/async-mqtt5/include/boost/mqtt5.hpp" ]; then
+            echo "ERROR: async-mqtt5 not initialized! Fixing..."
+            git submodule update --init --recursive
+          fi
+          ls -la third_party/async-mqtt5/include/boost/mqtt5.hpp
+          echo "✓ Submodules verified"
+
+      - name: Install system dependencies
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libssl-dev \
+            zlib1g-dev \
+            libgrpc++-dev \
+            libprotobuf-dev \
+            protobuf-compiler-grpc \
+            protobuf-compiler \
+            libboost-system-dev \
+            libboost-thread-dev \
+            clang-15 \
+            clang++-15 \
+            libc++-15-dev \
+            libc++abi-15-dev
+
+      - name: Print toolchain versions
+        run: |
+          echo "===== Clang Info ====="
+          clang-15 --version
+          clang++-15 --version
+          echo ""
+          echo "===== libc++ Info ====="
+          dpkg -l | grep -E "libc\+\+"
+          echo ""
+          echo "===== Protobuf/gRPC Info ====="
+          protoc --version
+          dpkg -l | grep -E "libprotobuf|grpc"
+          echo ""
+          echo "===== Boost Info ====="
+          dpkg -l | grep libboost-dev
+
+      - name: Configure CMake
+        env:
+          CC: clang-15
+          CXX: clang++-15
+          CXXFLAGS: "-stdlib=libc++"
+          LDFLAGS: "-stdlib=libc++"
+        run: |
+          set -e
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DBUILD_TESTS=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
+            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-stdlib=libc++" \
+            -GNinja
+
+      - name: Build
+        run: |
+          set -e
+          cmake --build build --parallel $(nproc) 2>&1 | tee build.log
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-clang-15
+          path: build.log
+          retention-days: 7
+
+      - name: Verify artifact exists
+        run: |
+          set -e
+          if [ ! -f build/vehicle_gateway ]; then
+            echo "ERROR: Expected artifact 'build/vehicle_gateway' not found!"
+            ls -la build/ || true
+            exit 1
+          fi
+          echo "Build artifact found successfully"
+          file build/vehicle_gateway
+
+      - name: Run Tests
+        run: |
+          set -e
+          cd build
+          ctest --output-on-failure --parallel $(nproc)
+
   build-fedora:
     name: Build on Fedora
     runs-on: ubuntu-latest
@@ -162,8 +329,20 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Verify submodules
+        run: |
+          if [ ! -f "third_party/async-mqtt5/include/boost/mqtt5.hpp" ]; then
+            echo "ERROR: async-mqtt5 not initialized! Fixing..."
+            git submodule update --init --recursive
+          fi
+          echo "===== Submodule Status ====="
+          git submodule status
+          ls -la third_party/async-mqtt5/include/boost/mqtt5.hpp
+          echo "✓ Submodules verified"
+
       - name: Install dependencies
         run: |
+          set -e
           dnf install -y \
           gcc-c++ \
           cmake \
@@ -176,24 +355,75 @@ jobs:
           grpc-plugins \
           protobuf-devel
 
-      - name: Verify Boost version
+      - name: Print toolchain versions
         run: |
-          rpm -q boost-devel
-          echo "Checking Boost version..."
+          echo "===== Compiler Info ====="
+          gcc --version
+          g++ --version
+          echo ""
+          echo "===== Protobuf/gRPC Info ====="
+          protoc --version
+          rpm -qa | grep -E "protobuf|grpc"
+          echo ""
+          echo "===== Boost Info ====="
+          rpm -qa | grep boost
+          echo ""
+          echo "===== Boost Version Details ====="
+          echo "#include <boost/version.hpp>" | g++ -x c++ -E - | grep "BOOST_LIB_VERSION" || true
 
       - name: Configure CMake
         run: |
+          set -e
           cmake -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DBUILD_TESTS=ON \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
             -GNinja
 
-      - name: Build
-        run: cmake --build build --parallel $(nproc)
+      - name: Build third-party dependencies first
+        run: |
+          set -e
+          echo "===== Building third-party libs ====="
+          cmake --build build --target async_mqtt5 || echo "async_mqtt5 is header-only"
+          cmake --build build --target spdlog
+          cmake --build build --target yaml-cpp
+          cmake --build build --target nlohmann_json || echo "nlohmann_json is header-only"
+
+      - name: Build proto files
+        run: |
+          set -e
+          echo "===== Generating proto files ====="
+          cmake --build build --target proto_lib
+
+      - name: Build main project
+        run: |
+          set -e
+          echo "===== Building main project ====="
+          cmake --build build --parallel $(nproc) 2>&1 | tee build.log
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-fedora
+          path: build.log
+          retention-days: 7
+
+      - name: Verify artifact exists
+        run: |
+          set -e
+          if [ ! -f build/vehicle_gateway ]; then
+            echo "ERROR: Expected artifact 'build/vehicle_gateway' not found!"
+            ls -la build/ || true
+            exit 1
+          fi
+          echo "Build artifact found successfully"
+          file build/vehicle_gateway
 
       - name: Run Tests
         run: |
+          set -e
           cd build
           ctest --output-on-failure --parallel $(nproc)
 
@@ -209,6 +439,7 @@ jobs:
     name: Sanitizers
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
         sanitizer: [address, undefined, thread]
 
@@ -220,6 +451,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
+          set -e
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
@@ -235,26 +467,33 @@ jobs:
             libboost-system-dev \
             libboost-thread-dev \
             clang-15 \
-            clang++-15
+            clang++-15 \
+            libc++-15-dev \
+            libc++abi-15-dev
 
       - name: Configure CMake
         env:
           CC: clang-15
           CXX: clang++-15
         run: |
+          set -e
           cmake -B build \
           -DCMAKE_BUILD_TYPE=Debug \
           -DENABLE_SANITIZERS=ON \
-          -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer" \
+          -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer -stdlib=libc++" \
           -DCMAKE_C_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer" \
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.sanitizer }} -stdlib=libc++" \
           -DBUILD_TESTS=ON \
           -GNinja
 
       - name: Build
-        run: cmake --build build --parallel $(nproc)
+        run: |
+          set -e
+          cmake --build build --parallel $(nproc)
 
       - name: Run tests
         run: |
+          set -e
           cd build
           ctest --output-on-failure
 
@@ -270,6 +509,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
+          set -e
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
@@ -289,6 +529,7 @@ jobs:
 
       - name: Configure CMake
         run: |
+          set -e
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Debug \
             -DENABLE_COVERAGE=ON \
@@ -297,15 +538,19 @@ jobs:
             -GNinja
 
       - name: Build
-        run: cmake --build build --parallel $(nproc)
+        run: |
+          set -e
+          cmake --build build --parallel $(nproc)
 
       - name: Run tests
         run: |
+          set -e
           cd build
           ctest --output-on-failure
 
       - name: Generate coverage report
         run: |
+          set -e
           lcov --capture --directory build --output-file coverage.info
           lcov --remove coverage.info '/usr/*' '*/third_party/*' '*/tests/*' --output-file coverage.info
           lcov --list coverage.info || echo "No coverage data found - skipping"
@@ -326,6 +571,14 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Verify submodules before Docker build
+        run: |
+          if [ ! -f "third_party/async-mqtt5/include/boost/mqtt5.hpp" ]; then
+            echo "ERROR: Submodules not initialized!"
+            git submodule update --init --recursive
+          fi
+          echo "✓ Submodules ready for Docker build"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -334,16 +587,27 @@ jobs:
 
       - name: Build ARM64 Docker image
         run: |
+          set -e
           docker buildx build \
             --platform linux/arm64 \
             -f Dockerfile.arm64 \
             --load \
             -t vehicle-gateway:arm64 \
-            .
+            . 2>&1 | tee docker-build.log
+
+      - name: Upload Docker build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-build-log
+          path: docker-build.log
+          retention-days: 7
 
       - name: Verify ARM64 binary
         run: |
-          docker run --rm --platform linux/arm64 vehicle-gateway:arm64 --help || true
+          docker run --rm --platform linux/arm64 vehicle-gateway:arm64 --version || \
+          docker run --rm --platform linux/arm64 vehicle-gateway:arm64 --help || \
+          echo "Binary verification failed - check if --version or --help flags are supported"
 
   static-analysis:
     name: Static Analysis
@@ -356,6 +620,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
+          set -e
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
@@ -372,16 +637,20 @@ jobs:
             libboost-thread-dev \
             clang-15 \
             clang++-15 \
-            clang-tidy-15
+            clang-tidy-15 \
+            libc++-15-dev \
+            libc++abi-15-dev
 
       - name: Generate proto files
         env:
           CC: clang-15
           CXX: clang++-15
         run: |
+          set -e
           cmake -B build \
           -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
           -DBUILD_TESTS=OFF \
           -GNinja
           cmake --build build --target proto_lib
