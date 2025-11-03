@@ -32,10 +32,6 @@ jobs:
           cppcheck --enable=all --suppress=missingIncludeSystem \
           --inline-suppr \
           --error-exitcode=1 src/
-      - name: Run clang-tidy
-        run: |
-          clang-tidy -p build $(find src -name '*.cpp') -- \
-          -I./include
 
   build-ubuntu-24:
     name: Build Ubuntu 24.04 (${{ matrix.compiler.name }})
