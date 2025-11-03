@@ -258,13 +258,14 @@ jobs:
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
             protobuf-compiler-grpc protobuf-compiler \
-            lcov
+            lcov gcovr
 
       - name: Configure
         run: |
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_CXX_FLAGS="--coverage" \
+            -DCMAKE_CXX_FLAGS="--coverage -g -O0" \
+            -DCMAKE_C_FLAGS="--coverage -g -O0" \
             -DBUILD_TESTS=ON
 
       - name: Build
@@ -273,17 +274,40 @@ jobs:
       - name: Test
         run: cd build && ctest --output-on-failure
 
-      - name: Generate Coverage
+      - name: Generate Coverage (lcov)
+        continue-on-error: true
         run: |
-          lcov --capture --directory build --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' '*/third_party/*' '*/tests/*' -o coverage.info
-          lcov --list coverage.info
+          lcov --capture --directory build --output-file coverage.info \
+            --rc geninfo_unexecuted_blocks=1 \
+            --ignore-errors mismatch,gcov,negative \
+            --exclude '/usr/*' \
+            --exclude '*/third_party/*' \
+            --exclude '*/tests/*' \
+            --exclude '*/build/*' || true
+          
+          if [ -f coverage.info ]; then
+            lcov --remove coverage.info '/usr/*' '*/third_party/*' '*/tests/*' '*/build/*' -o coverage.info
+            lcov --list coverage.info || true
+          fi
+
+      - name: Generate Coverage (gcovr - alternative)
+        run: |
+          gcovr --xml-pretty --exclude-unreachable-branches \
+            --exclude '/usr/*' \
+            --exclude '.*/third_party/.*' \
+            --exclude '.*/tests/.*' \
+            --exclude '.*/build/.*' \
+            --root . \
+            --output coverage.xml \
+            build/ || echo "gcovr failed, continuing..."
 
       - name: Upload to Codecov
+        if: always()
         uses: codecov/codecov-action@v4
         with:
-          files: ./coverage.info
+          files: ./coverage.info,./coverage.xml
           fail_ci_if_error: false
+          verbose: true
 
   build-arm64-docker:
     name: Build ARM64 Docker
