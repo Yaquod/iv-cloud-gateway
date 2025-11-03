@@ -40,7 +40,7 @@ find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
 # Boost from system (only need system, thread for Beast)
-find_package(Boost 1.74 REQUIRED COMPONENTS system thread)
+find_package(Boost 1.83 REQUIRED COMPONENTS system thread)
 
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG QUIET)

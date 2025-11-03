@@ -14,6 +14,12 @@ target_include_directories(async_mqtt5 INTERFACE
 )
 target_compile_features(async_mqtt5 INTERFACE cxx_std_17)
 
+target_link_libraries(async_mqtt5 INTERFACE
+        Boost::system
+        Boost::thread
+        OpenSSL::SSL
+        OpenSSL::Crypto
+)
 # ============================================================================
 # nlohmann/json (header-only)
 # ============================================================================

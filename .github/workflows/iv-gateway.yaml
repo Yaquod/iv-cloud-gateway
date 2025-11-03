@@ -21,7 +21,7 @@ env:
 jobs:
   code-quality:
     name: Code Quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,8 +45,8 @@ jobs:
             protobuf-compiler \
             libboost-system-dev \
             libboost-thread-dev \
-            ${{ matrix.compiler.cc }} \
-            ${{ matrix.compiler.cxx }}
+            clang-format \
+            cppcheck
 
       - name: Generate proto files
         run: |
@@ -69,15 +69,17 @@ jobs:
           -I include \
           src/ include/
 
-  build-ubuntu-22:
-    name: Build on Ubuntu 22.04
-    runs-on: ubuntu-22.04
+  build-ubuntu-24:
+    name: Build on Ubuntu 24.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         compiler:
           - { cc: gcc-12, cxx: g++-12 }
-          - { cc: clang-14, cxx: clang++-14 }
+          - { cc: gcc-13, cxx: g++-13 }
+          - { cc: clang-15, cxx: clang++-15 }
         build_type: [Release]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -102,6 +104,11 @@ jobs:
             libboost-thread-dev \
             ${{ matrix.compiler.cc }} \
             ${{ matrix.compiler.cxx }}
+
+      - name: Verify Boost version
+        run: |
+          dpkg -l | grep libboost-dev
+          echo "Boost version should be 1.83+"
 
       - name: Configure CMake
         env:
@@ -123,10 +130,10 @@ jobs:
           ctest --output-on-failure --parallel $(nproc)
 
       - name: Upload build artifacts
-        if: matrix.build_type == 'Release' && matrix.compiler.cc == 'gcc-12'
+        if: matrix.build_type == 'Release' && matrix.compiler.cc == 'gcc-13'
         uses: actions/upload-artifact@v4
         with:
-          name: vehicle-gateway-ubuntu-22.04
+          name: vehicle-gateway-ubuntu-24.04
           path: build/vehicle_gateway
           retention-days: 7
 
@@ -137,54 +144,6 @@ jobs:
           name: test-results-${{ matrix.build_type }}-${{ matrix.compiler.cc }}
           path: build/Testing/
           retention-days: 7
-
-  build-ubuntu-24:
-    name: Build on Ubuntu 24.04
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        build_type: [Release]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            ninja-build \
-            pkg-config \
-            libssl-dev \
-            zlib1g-dev \
-            libgrpc++-dev \
-            libprotobuf-dev \
-            protobuf-compiler-grpc \
-            protobuf-compiler \
-            libboost-system-dev \
-            libboost-thread-dev \
-            ${{ matrix.compiler.cc }} \
-            ${{ matrix.compiler.cxx }}
-
-      - name: Configure CMake
-        run: |
-          cmake -B build \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DBUILD_TESTS=ON \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -GNinja
-
-      - name: Build
-        run: cmake --build build --parallel $(nproc)
-
-      - name: Run Tests
-        run: |
-          cd build
-          ctest --output-on-failure --parallel $(nproc)
 
   build-fedora:
     name: Build on Fedora
@@ -217,6 +176,11 @@ jobs:
           grpc-plugins \
           protobuf-devel
 
+      - name: Verify Boost version
+        run: |
+          rpm -q boost-devel
+          echo "Checking Boost version..."
+
       - name: Configure CMake
         run: |
           cmake -B build \
@@ -243,7 +207,7 @@ jobs:
 
   sanitizers:
     name: Sanitizers
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         sanitizer: [address, undefined, thread]
@@ -270,13 +234,13 @@ jobs:
             protobuf-compiler \
             libboost-system-dev \
             libboost-thread-dev \
-            ${{ matrix.compiler.cc }} \
-            ${{ matrix.compiler.cxx }}
+            clang-15 \
+            clang++-15
 
       - name: Configure CMake
         env:
-          CC: clang-14
-          CXX: clang++-14
+          CC: clang-15
+          CXX: clang++-15
         run: |
           cmake -B build \
           -DCMAKE_BUILD_TYPE=Debug \
@@ -296,7 +260,7 @@ jobs:
 
   coverage:
     name: Code Coverage
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -320,8 +284,8 @@ jobs:
             protobuf-compiler \
             libboost-system-dev \
             libboost-thread-dev \
-            ${{ matrix.compiler.cc }} \
-            ${{ matrix.compiler.cxx }}
+            lcov \
+            gcovr
 
       - name: Configure CMake
         run: |
@@ -383,7 +347,7 @@ jobs:
 
   static-analysis:
     name: Static Analysis
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -406,13 +370,14 @@ jobs:
             protobuf-compiler \
             libboost-system-dev \
             libboost-thread-dev \
-            ${{ matrix.compiler.cc }} \
-            ${{ matrix.compiler.cxx }}
+            clang-15 \
+            clang++-15 \
+            clang-tidy-15
 
       - name: Generate proto files
         env:
-          CC: clang-14
-          CXX: clang++-14
+          CC: clang-15
+          CXX: clang++-15
         run: |
           cmake -B build \
           -DCMAKE_BUILD_TYPE=Debug \
@@ -424,4 +389,4 @@ jobs:
       - name: Run clang-tidy
         run: |
           find src -name '*.cpp' -not -path '*/third_party/*' | \
-          xargs clang-tidy-14 -p build --warnings-as-errors='' || true
+          xargs clang-tidy-15 -p build --warnings-as-errors='' || true
