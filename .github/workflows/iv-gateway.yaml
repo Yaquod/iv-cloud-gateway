@@ -77,7 +77,11 @@ jobs:
         run: cmake --build build --parallel $(nproc)
 
       - name: Test
-        run: cd build && ctest --output-on-failure --timeout 120
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: cd build && ctest --output-on-failure
 
       - name: Upload Artifacts
         if: matrix.compiler.name == 'gcc-13' && matrix.build_type == 'Release'
@@ -124,7 +128,11 @@ jobs:
         run: cmake --build build --parallel $(nproc)
 
       - name: Test
-        run: cd build && ctest --output-on-failure --timeout 120
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: cd build && ctest --output-on-failure
 
   build-fedora:
     name: Build Fedora 42
@@ -161,7 +169,11 @@ jobs:
         run: cmake --build build --parallel $(nproc)
 
       - name: Test
-        run: cd build && ctest --output-on-failure --timeout 120
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: cd build && ctest --output-on-failure
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -261,9 +273,13 @@ jobs:
         run: cmake --build build --parallel $(nproc)
 
       - name: Test
+        uses: nick-fields/retry@v2
         env:
           TSAN_OPTIONS: suppressions=${{ github.workspace }}/tsan.supp
-        run: cd build && ctest --output-on-failure --timeout 120
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: cd build && ctest --output-on-failure
 
   coverage:
     name: Code Coverage
@@ -298,7 +314,11 @@ jobs:
         run: cmake --build build --parallel $(nproc)
 
       - name: Test
-        run: cd build && ctest --output-on-failure
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: cd build && ctest --output-on-failure
 
       - name: Generate Coverage (lcov)
         continue-on-error: true

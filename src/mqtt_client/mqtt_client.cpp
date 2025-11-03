@@ -85,7 +85,7 @@ bool cloud_gateway::MqttClient::mqtt_subscribe(const std::string& topic) {
 void cloud_gateway::MqttClient::mqtt_disconnect() {
   spdlog::info("trying to disconnect");
   client_.async_disconnect([this](boost::system::error_code ec) {
-    spdlog::error("[MQTT disconnect] ", ec.message());
+    spdlog::error("[MQTT disconnect] : {} ", ec.message());
     ioc_.stop();
   });
 
