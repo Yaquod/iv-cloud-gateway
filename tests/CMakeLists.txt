@@ -14,6 +14,7 @@ target_include_directories(gateway_tests
 target_link_libraries(gateway_tests
         PRIVATE
         gateway_lib
+        async_mqtt5
         GTest::gtest
         GTest::gmock
         GTest::gtest_main
@@ -42,6 +43,7 @@ if(BUILD_INTEGRATION_TESTS)
     target_link_libraries(gateway_integration_tests
             PRIVATE
             gateway_lib
+            async_mqtt5
             GTest::gtest
             GTest::gmock
             GTest::gtest_main

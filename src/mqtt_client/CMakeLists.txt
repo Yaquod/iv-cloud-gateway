@@ -10,10 +10,15 @@ target_include_directories(mqtt_client_lib
 
 target_link_libraries(mqtt_client_lib
         PUBLIC
-        mqtt_client
+        async_mqtt5
+        Boost::system
+        Boost::thread
         spdlog::spdlog
         OpenSSL::SSL
+        OpenSSL::Crypto
 )
+
+target_compile_features(mqtt_client_lib PUBLIC cxx_std_20)
 
 target_compile_options(mqtt_client_lib PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra>
