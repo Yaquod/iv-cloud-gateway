@@ -32,7 +32,7 @@ void cloud_gateway::MqttClient::start_runner() {
 void cloud_gateway::MqttClient::mqtt_connect() {
   client_.brokers(broker_, port_).credentials(clientId_);
 
-  spdlog::info("trying to connect");
+  spdlog::info("mqtt trying to connect to broker");
 
   client_.async_run([](const boost::system::error_code& ec) {
     spdlog::error("[MQTT connect Error] {}", ec.message());
@@ -83,7 +83,7 @@ bool cloud_gateway::MqttClient::mqtt_subscribe(const std::string& topic) {
 
 // cppcheck-suppress unusedFunction
 void cloud_gateway::MqttClient::mqtt_disconnect() {
-  spdlog::info("trying to disconnect");
+  spdlog::info("mqtt trying to disconnect");
   client_.async_disconnect([this](boost::system::error_code ec) {
     spdlog::error("[MQTT disconnect] : {} ", ec.message());
     ioc_.stop();

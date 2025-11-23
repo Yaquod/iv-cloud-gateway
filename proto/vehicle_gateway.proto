@@ -3,28 +3,56 @@ syntax = "proto3";
 package vehicle_gateway;
 
 service VehicleGateway {
-  rpc SendTelemetry(TelemetryRequest) returns (TelemetryResponse);
-  rpc SendStatus(StatusRequest) returns (StatusResponse);
-  rpc ReceiveCommand(CommandRequest) returns (CommandResponse);
+
+  rpc VechileLogin(LoginRequest)returns (LoginRespose);   /*topic/trip/init*/
+  rpc SendEta(EtaRequest) returns (EtaResponse);  /*topic/trip/eta*/
+  rpc SendStatus(StatusRequest) returns (StatusResponse);    /*topic/trip/status*/
+  rpc ReceiveCommand(CommandRequest) returns (CommandResponse);  /*arrive or move */
+
+
 }
 
-message TelemetryRequest {
-  string vehicle_id = 1;
-  double latitude = 2;
-  double longitude = 3;
-  double speed = 4;
-  int64 timestamp = 5;
+  message LoginRequest
+  {
+    string vin_number = 1;
+    string trip_id = 2;
+    double starting_long = 3;
+    double starting_lat = 4;
+    double ending_long = 5;
+    double ending_lat = 6;
+
+
+  }
+
+message LoginRespose
+{
+   bool success = 1;
+  string message = 2;
+
 }
 
-message TelemetryResponse {
+message EtaRequest
+{
+  string vin_number = 1;
+  string trip_id = 2;
+  double time = 3;
+  double fare = 4;
+}
+
+message EtaResponse
+{
   bool success = 1;
   string message = 2;
 }
 
-message StatusRequest {
-  string vehicle_id = 1;
-  string status = 2;
-  int64 timestamp = 3;
+
+
+
+message StatusRequest
+{
+  string vin_number = 1;
+  string trip_id = 2;
+  string status = 3;
 }
 
 message StatusResponse {

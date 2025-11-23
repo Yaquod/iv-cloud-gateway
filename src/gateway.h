@@ -9,12 +9,17 @@
 
 #include "http_client/http_client.h"
 #include "mqtt_client/mqtt_client.h"
+#include "grpc/vehicle_gateway_service.h"
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/server_builder.h>
+#include <spdlog/spdlog.h>
+
 
 namespace cloud_gateway {
 class Gateway {
  public:
   Gateway();
-  ~Gateway();
+ // ~Gateway();
 
   void initialize();
   void run();
@@ -23,7 +28,10 @@ class Gateway {
  private:
   std::unique_ptr<HttpClient> httpClient;
   std::unique_ptr<MqttClient> mqttClient;
-
-  void register_vehicle();
+  std::unique_ptr<grpc::Server> server;
+  std::unique_ptr<VehicleGatewayServiceImp> service;
+  //void register_vehicle();
 };
 }  // namespace cloud_gateway
+
+#endif

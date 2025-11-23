@@ -1,16 +1,25 @@
 add_subdirectory(http_client)
 add_subdirectory(mqtt_client)
+#added
+add_subdirectory(grpc)
+#added
+add_subdirectory(client)
 
 add_library(gateway_lib STATIC
         gateway.cpp
         $<TARGET_OBJECTS:http_client_lib>
         $<TARGET_OBJECTS:mqtt_client_lib>
+        #added
+        $<TARGET_OBJECTS:vehicle_gateway_service_lib>
+
 )
 
 target_include_directories(gateway_lib
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
+        #added
+        ${CMAKE_SOURCE_DIR}/src
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
