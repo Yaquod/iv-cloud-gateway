@@ -14,9 +14,6 @@ service(std::make_unique<VehicleGatewayServiceImp>(mqttClient.get() , httpClient
 }
 
 
-// cloud_gateway::Gateway::~Gateway() {
-//
-// }
 
 
 void cloud_gateway::Gateway::run() {
@@ -37,11 +34,34 @@ void cloud_gateway::Gateway::shutdown() {
 }
 
 void cloud_gateway::Gateway::initialize() {
-
     mqttClient->start_runner();
     mqttClient->mqtt_connect();
-    //subscribe to the topic
+    mqttClient->mqtt_subscribe("topic/trip/init");
+    mqttClient->mqtt_subscribe("topic/trip/move");
+
+
+    mqttClient->set_message_arrived_handler([](const std::string &topic , const std::string &payload) {
+        parsing_received_command(topic, payload);
+    });
+    mqttClient->start_receive_loop();
 }
+
+void cloud_gateway::parsing_received_command(const std::string& topic, const std::string& payload) {
+    if (topic == "topic/trip/init")
+    {
+        spdlog::info("received message on init topic");
+    }
+    else if (topic == "topic/trip/move")
+    {
+        spdlog::info("received message on move topic");
+    }
+    else {
+        spdlog::info("undefined topic");
+    }
+}
+
+
+
 
 
 

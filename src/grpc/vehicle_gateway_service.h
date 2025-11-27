@@ -26,7 +26,9 @@ public:
     Status VechileLogin(ServerContext* context, const vehicle_gateway::LoginRequest* request, vehicle_gateway::LoginRespose* response)override;
     Status SendEta(ServerContext* context, const vehicle_gateway::EtaRequest* request, vehicle_gateway::EtaResponse* response)override;
     Status SendStatus(ServerContext* context, const vehicle_gateway::StatusRequest* request, vehicle_gateway::StatusResponse* response)override;
-    Status ReceiveCommand(ServerContext* context, const vehicle_gateway::CommandRequest* request, vehicle_gateway::CommandResponse* response)override;
+    Status SendArrive(ServerContext* context, const vehicle_gateway::ArriveRequest* request, vehicle_gateway::ArriveResponse* response)override;
+
+
 
 
 private:

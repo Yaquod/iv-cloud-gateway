@@ -13,19 +13,12 @@ VechileGatewayClient::VechileGatewayClient(const std::string &server_add) {
 }
 
 void VechileGatewayClient::Login(const std::string &vin_number_val,
-            const std::string & trip_id_val,
-             double starting_long_val,
-             double starting_lat_val,
-             double ending_lon_val,
-             double ending_lat_val
+            const std::string & trip_id_val
+
      ) {
     vehicle_gateway::LoginRequest req;
     req.set_vin_number(vin_number_val);
     req.set_trip_id(trip_id_val);
-    req.set_starting_long(starting_long_val);
-    req.set_starting_lat(starting_lat_val);
-    req.set_ending_long(ending_lon_val);
-    req.set_ending_lat(ending_lat_val);
 
     vehicle_gateway::LoginRespose resp;
      grpc::ClientContext ctx;
@@ -52,8 +45,13 @@ void VechileGatewayClient::SendEta (
     grpc::ClientContext ctx;
     grpc::Status status = stub->SendEta(&ctx, req, &resp);
 
-    spdlog::error("RPC send eta failed: {}", status.error_message());
-    spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
+    //spdlog::error("RPC send eta failed: {}", status.error_message());
+    if (status.ok()) {
+        spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
+    }
+    else {
+        spdlog::error("RPC send status failed in sendeta: {}", status.error_message());
+    }
 
 
 }
@@ -74,11 +72,45 @@ void VechileGatewayClient::SendStatus(
     grpc::Status status = stub->SendStatus(&ctx, req, &resp);
     if (status.ok()) {
         spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
-        //spdlog::info("server respond ok ");
+
     }
     else
-    spdlog::error("RPC send status failed: {}", status.error_message());
-     //spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
+    spdlog::error("RPC send status failed in send status: {}", status.error_message());
+
+
+}
+
+void VechileGatewayClient::SendArrive(
+ const std::string &vin_number_val,
+ const std::string & trip_id_val,
+ double long_val,
+ double lat_val
+     ) {
+    vehicle_gateway::ArriveRequest req;
+    req.set_vin_number(vin_number_val);
+    req.set_trip_id(trip_id_val);
+    req.set_long_(long_val);
+    req.set_lat(lat_val);
+
+    vehicle_gateway::ArriveResponse resp;
+    grpc::ClientContext ctx;
+    grpc::Status status = stub->SendArrive(&ctx, req, &resp);
+    if (status.ok()) {
+        spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
+
+    }
+    else
+        spdlog::error("RPC send status failed in send status: {}", status.error_message());
+
+
+}
+
+void start_trip_flow() {
+
+    VechileGatewayClient client("localhost:50051");
+    client.Login("1234","trip_id1");
+
+
 
 }
 

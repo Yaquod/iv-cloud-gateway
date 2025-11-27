@@ -16,10 +16,13 @@
 
 
 namespace cloud_gateway {
+
+ void parsing_received_command(const std::string& topic, const std::string& payload);
+
 class Gateway {
  public:
   Gateway();
- // ~Gateway();
+
 
   void initialize();
   void run();
@@ -30,7 +33,7 @@ class Gateway {
   std::unique_ptr<MqttClient> mqttClient;
   std::unique_ptr<grpc::Server> server;
   std::unique_ptr<VehicleGatewayServiceImp> service;
-  //void register_vehicle();
+
 };
 }  // namespace cloud_gateway
 

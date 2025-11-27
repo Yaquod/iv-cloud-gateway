@@ -9,17 +9,16 @@
     #include <string>
     #include <spdlog/spdlog.h>
 
+     void start_trip_flow();
 
     class VechileGatewayClient {
+
     public:
 
         VechileGatewayClient(const std::string &server_add);
         void Login(const std::string &vin_number_val,
-                   const std::string & trip_id_val,
-                    double starting_long_val,
-                    double starting_lat_val,
-                    double ending_lon_val,
-                    double ending_lat_val
+                   const std::string & trip_id_val
+
             );
 
         void SendEta (
@@ -34,6 +33,15 @@
         const std::string & trip_id_val,
         const std::string & status_val
             );
+
+        void SendArrive(
+        const std::string &vin_number_val,
+        const std::string & trip_id_val,
+        double long_val,
+        double lat_val
+            );
+
+
 
     private:
         std::unique_ptr<vehicle_gateway::VehicleGateway::Stub>stub;

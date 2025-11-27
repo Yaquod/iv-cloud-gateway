@@ -7,7 +7,7 @@ service VehicleGateway {
   rpc VechileLogin(LoginRequest)returns (LoginRespose);   /*topic/trip/init*/
   rpc SendEta(EtaRequest) returns (EtaResponse);  /*topic/trip/eta*/
   rpc SendStatus(StatusRequest) returns (StatusResponse);    /*topic/trip/status*/
-  rpc ReceiveCommand(CommandRequest) returns (CommandResponse);  /*arrive or move */
+  rpc SendArrive(ArriveRequest)returns (ArriveResponse);
 
 
 }
@@ -16,12 +16,6 @@ service VehicleGateway {
   {
     string vin_number = 1;
     string trip_id = 2;
-    double starting_long = 3;
-    double starting_lat = 4;
-    double ending_long = 5;
-    double ending_lat = 6;
-
-
   }
 
 message LoginRespose
@@ -60,12 +54,14 @@ message StatusResponse {
   string message = 2;
 }
 
-message CommandRequest {
-  string command_type = 1;
-  string payload = 2;
+message ArriveRequest{
+  string vin_number = 1;
+  string trip_id = 2;
+  double long = 3;
+  double lat = 4;
 }
 
-message CommandResponse {
+message ArriveResponse{
   bool success = 1;
-  string result = 2;
+  string message = 2;
 }
