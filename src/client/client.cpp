@@ -6,30 +6,58 @@
 
 #include "client.h"
 
+#include <condition_variable>
+
 VechileGatewayClient::VechileGatewayClient(const std::string &server_add) {
     auto channel = grpc::CreateChannel(server_add, grpc::InsecureChannelCredentials());
     stub = vehicle_gateway::VehicleGateway::NewStub(channel);
 
 }
 
-void VechileGatewayClient::Login(const std::string &vin_number_val,
+bool VechileGatewayClient::Login(const std::string &vin_number_val,
             const std::string & trip_id_val
 
-     ) {
+     )
+{
     vehicle_gateway::LoginRequest req;
     req.set_vin_number(vin_number_val);
     req.set_trip_id(trip_id_val);
 
     vehicle_gateway::LoginRespose resp;
      grpc::ClientContext ctx;
-     grpc::Status status = stub->VechileLogin(&ctx, req, &resp);
 
-    spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
+    bool done = false, res;
 
+    std::condition_variable cv;
+    std::mutex mu;
+
+    stub->async()->VechileLogin(&ctx, req, &resp,
+    [&mu , &cv , &done ,&resp](grpc::Status status) {
+        bool ret;
+        if (!status.ok()) {
+            spdlog::info("login failed ");
+            ret = false;
+        }
+        else {
+            spdlog::info("login succeeded");
+            ret = true;
+        }
+        res = ret;
+
+        std::lock_guard<std::mutex> lock(mu);
+        done = true;
+        cv.notify_one();
+    }
+    );
+
+    std::unique_lock<std::mutex> lock(mu);
+    cv.wait(lock, [&done] { return done; });
+
+    return res ;
 
 }
 
-void VechileGatewayClient::SendEta (
+bool VechileGatewayClient::SendEta (
     const std::string &vin_number_val,
     const std::string & trip_id_val,
     double time_val,
@@ -43,21 +71,43 @@ void VechileGatewayClient::SendEta (
 
     vehicle_gateway::EtaResponse resp;
     grpc::ClientContext ctx;
-    grpc::Status status = stub->SendEta(&ctx, req, &resp);
 
-    //spdlog::error("RPC send eta failed: {}", status.error_message());
-    if (status.ok()) {
-        spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
+    bool done = false, res;
+
+    std::condition_variable cv;
+    std::mutex mu;
+
+    stub->async()->SendEta(&ctx, req, &resp,
+    [&mu , &cv , &done ,&resp](grpc::Status status) {
+        bool ret;
+        if (!status.ok()) {
+            spdlog::info("send Eta failed ");
+            ret = false;
+        }
+        else {
+            spdlog::info("send Eta succeeded");
+            ret = true;
+        }
+        res = ret;
+
+        std::lock_guard<std::mutex> lock(mu);
+        done = true;
+        cv.notify_one();
     }
-    else {
-        spdlog::error("RPC send status failed in sendeta: {}", status.error_message());
-    }
+    );
+
+    std::unique_lock<std::mutex> lock(mu);
+    cv.wait(lock, [&done] { return done; });
+
+    return res ;
+
+
 
 
 }
 
 
-void VechileGatewayClient::SendStatus(
+bool VechileGatewayClient::SendStatus(
  const std::string &vin_number_val,
  const std::string & trip_id_val,
  const std::string & status_val
@@ -69,18 +119,42 @@ void VechileGatewayClient::SendStatus(
 
     vehicle_gateway::StatusResponse resp;
     grpc::ClientContext ctx;
-    grpc::Status status = stub->SendStatus(&ctx, req, &resp);
-    if (status.ok()) {
-        spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
 
+    bool done = false, res;
+
+    std::condition_variable cv;
+    std::mutex mu;
+
+    stub->async()->SendEta(&ctx, req, &resp,
+    [&mu , &cv , &done ,&resp](grpc::Status status) {
+        bool ret;
+        if (!status.ok()) {
+            spdlog::info("send status failed ");
+            ret = false;
+        }
+        else {
+            spdlog::info("send status succeeded");
+            ret = true;
+        }
+        res = ret;
+
+        std::lock_guard<std::mutex> lock(mu);
+        done = true;
+        cv.notify_one();
     }
-    else
-    spdlog::error("RPC send status failed in send status: {}", status.error_message());
+    );
+
+    std::unique_lock<std::mutex> lock(mu);
+    cv.wait(lock, [&done] { return done; });
+
+    return res ;
+
+
 
 
 }
 
-void VechileGatewayClient::SendArrive(
+bool VechileGatewayClient::SendArrive(
  const std::string &vin_number_val,
  const std::string & trip_id_val,
  double long_val,
@@ -94,21 +168,41 @@ void VechileGatewayClient::SendArrive(
 
     vehicle_gateway::ArriveResponse resp;
     grpc::ClientContext ctx;
-    grpc::Status status = stub->SendArrive(&ctx, req, &resp);
-    if (status.ok()) {
-        spdlog::info("success = {} ,message = {}", resp.success(), resp.message());
 
+    bool done = false, res;
+
+    std::condition_variable cv;
+    std::mutex mu;
+
+    stub->async()->SendEta(&ctx, req, &resp,
+    [&mu , &cv , &done ,&resp](grpc::Status status) {
+        bool ret;
+        if (!status.ok()) {
+            spdlog::info("send arrive failed ");
+            ret = false;
+        }
+        else {
+            spdlog::info("send arrive succeeded");
+            ret = true;
+        }
+        res = ret;
+
+        std::lock_guard<std::mutex> lock(mu);
+        done = true;
+        cv.notify_one();
     }
-    else
-        spdlog::error("RPC send status failed in send status: {}", status.error_message());
+    );
+
+    std::unique_lock<std::mutex> lock(mu);
+    cv.wait(lock, [&done] { return done; });
+
+    return res ;
 
 
 }
 
 void start_trip_flow() {
 
-    VechileGatewayClient client("localhost:50051");
-    client.Login("1234","trip_id1");
 
 
 

@@ -43,15 +43,22 @@ void cloud_gateway::MqttClient::mqtt_connect() {
 
 // cppcheck-suppress unusedFunction
 void cloud_gateway::MqttClient::mqtt_publish(const std::string& topic,
-                                             const std::string& payload) {
+                                             const std::string& payload , std::function<void(bool success, const std::string msg)> publish_cb)
+{
 
   spdlog::info("trying to publish");
   client_.async_publish<boost::mqtt5::qos_e::at_most_once>(
       topic, payload, boost::mqtt5::retain_e::yes,
       boost::mqtt5::publish_props{},
-      [this , topic ](boost::mqtt5::error_code ec) {
-        if (ec) spdlog::error("[failed to publish{} : {}",topic, ec.message());
-        else spdlog::info("message publish to {}", topic);
+      [this , topic ,publish_cb ](boost::mqtt5::error_code ec) {
+        if (ec) {
+          spdlog::error("[failed to publish{} : {}",topic, ec.message());
+          if (publish_cb) publish_cb(false, ec.message());
+        }
+        else {
+          spdlog::info("message publish to {}", topic);
+          if (publish_cb) publish_cb(true, "ok");
+        }
       });
 
 

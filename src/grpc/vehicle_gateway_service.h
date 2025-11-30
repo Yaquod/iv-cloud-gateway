@@ -19,14 +19,14 @@ using grpc::ServerContext;
 using cloud_gateway::MqttClient;
 using cloud_gateway::HttpClient;
 
-class VehicleGatewayServiceImp final :public vehicle_gateway::VehicleGateway::Service {
+class VehicleGatewayServiceImp final :public vehicle_gateway::VehicleGateway::CallbackService {
 public:
     VehicleGatewayServiceImp (MqttClient* mqtt , HttpClient* http);
     ~VehicleGatewayServiceImp () ;
-    Status VechileLogin(ServerContext* context, const vehicle_gateway::LoginRequest* request, vehicle_gateway::LoginRespose* response)override;
-    Status SendEta(ServerContext* context, const vehicle_gateway::EtaRequest* request, vehicle_gateway::EtaResponse* response)override;
-    Status SendStatus(ServerContext* context, const vehicle_gateway::StatusRequest* request, vehicle_gateway::StatusResponse* response)override;
-    Status SendArrive(ServerContext* context, const vehicle_gateway::ArriveRequest* request, vehicle_gateway::ArriveResponse* response)override;
+    grpc::ServerUnaryReactor* VechileLogin(grpc::CallbackServerContext* context, const vehicle_gateway::LoginRequest* request, vehicle_gateway::LoginRespose* response)override;
+    grpc::ServerUnaryReactor* SendEta(grpc::CallbackServerContext* context, const vehicle_gateway::EtaRequest* request, vehicle_gateway::EtaResponse* response)override;
+    grpc::ServerUnaryReactor* SendStatus(grpc::CallbackServerContext* context, const vehicle_gateway::StatusRequest* request, vehicle_gateway::StatusResponse* response)override;
+    grpc::ServerUnaryReactor* SendArrive(grpc::CallbackServerContext* context, const vehicle_gateway::ArriveRequest* request, vehicle_gateway::ArriveResponse* response)override;
 
 
 

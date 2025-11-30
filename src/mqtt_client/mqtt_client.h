@@ -18,7 +18,7 @@ class MqttClient {
 
   void mqtt_connect();
   void mqtt_disconnect();
-  void mqtt_publish(const std::string& topic, const std::string& payload);
+  void mqtt_publish(const std::string& topic, const std::string& payload , std::function<void(bool success , const std::string msg)> publish_cb);
   void mqtt_subscribe(const std::string& topic);
   void start_runner();
   void start_receive_loop();
