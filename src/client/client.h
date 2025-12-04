@@ -9,6 +9,7 @@
     #include <string>
     #include <spdlog/spdlog.h>
 
+
      void start_trip_flow();
 
     class VechileGatewayClient {

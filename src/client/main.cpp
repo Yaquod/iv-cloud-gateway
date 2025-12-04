@@ -3,12 +3,16 @@
 //
 
 #include "client.h"
+#include <thread>
 int main ()
 {
     VechileGatewayClient client("localhost:50051");
-   // client.Login("VIN123", "T1000", 31.21, 29.99, 31.30, 30.10);
-    client.SendEta("VIN123", "T1000", 15.3, 50.0);
-    client.SendStatus("VIN123", "T1000", "moving");
-    client.SendArrive("VIN123", "T1000", 17.9,12.4);
 
+    client.SendEta("VIN123", "T1000", 15.3, 50.0);
+
+   // client.SendStatus("VIN123", "T1000", "moving");
+    //client.SendArrive("VIN123", "T1000", 17.9,12.4);
+
+     std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    return 0;
 }

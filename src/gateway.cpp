@@ -20,10 +20,21 @@ void cloud_gateway::Gateway::run() {
 
     std::string server_address("0.0.0.0:50051");
     grpc::ServerBuilder builder;
+
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    spdlog::info("service type: {}", typeid(*service).name());
     builder.RegisterService(service.get());
+
     server = builder.BuildAndStart();
-    spdlog::info("server start response");
+    if (!server) {
+        spdlog::error("Server failed to start!");
+        return;
+    }
+
+     spdlog::info("Server listening on {}", server_address);
+
+
+   // spdlog::info("server start response");
     server->Wait();
 
 }
@@ -40,10 +51,13 @@ void cloud_gateway::Gateway::initialize() {
     mqttClient->mqtt_subscribe("topic/trip/move");
 
 
-    mqttClient->set_message_arrived_handler([](const std::string &topic , const std::string &payload) {
+    mqttClient->set_message_arrived_handler([](const std::string &topic , const std::string &payload)
+    {
         parsing_received_command(topic, payload);
     });
     mqttClient->start_receive_loop();
+
+
 }
 
 void cloud_gateway::parsing_received_command(const std::string& topic, const std::string& payload) {

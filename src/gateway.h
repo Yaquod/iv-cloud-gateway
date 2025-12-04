@@ -28,6 +28,7 @@ class Gateway {
   void run();
   void shutdown();
 
+
  private:
   std::unique_ptr<HttpClient> httpClient;
   std::unique_ptr<MqttClient> mqttClient;

@@ -25,6 +25,7 @@ void cloud_gateway::MqttClient::start_runner() {
     auto work_guard = boost::asio::make_work_guard(ioc_);
 
     spdlog::info("Runner thread started.");
+
     ioc_.run();
     spdlog::info("Runner thread finished.");
   });
@@ -38,6 +39,7 @@ void cloud_gateway::MqttClient::mqtt_connect() {
 
   client_.async_run([](const boost::system::error_code& ec) {
    if (ec) spdlog::error("[MQTT connect Error] {}", ec.message());
+
   });
 }
 
@@ -47,6 +49,7 @@ void cloud_gateway::MqttClient::mqtt_publish(const std::string& topic,
 {
 
   spdlog::info("trying to publish");
+
   client_.async_publish<boost::mqtt5::qos_e::at_most_once>(
       topic, payload, boost::mqtt5::retain_e::yes,
       boost::mqtt5::publish_props{},
