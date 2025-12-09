@@ -1,241 +1,182 @@
-    //
-    // Created by alaa-hassan on 22‏/11‏/2025.
-    //
+#include "../../build/proto/vehicle_gateway.pb.h"
+#include "client.h"
 
-    #include "../../build/proto/vehicle_gateway.pb.h"
+VechileGatewayClient::VechileGatewayClient(const std::string &server_add) {
+    auto channel = grpc::CreateChannel(server_add, grpc::InsecureChannelCredentials());
+    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
 
-    #include "client.h"
+    if (!channel->WaitForConnected(deadline)) {
+        spdlog::error("Failed to connect to server!");
+    } else {
+        spdlog::info("Successfully connected to server");
+    }
 
-    #include <condition_variable>
-#include <grpcpp/impl/codegen/client_callback.h>
+    stub = vehicle_gateway::VehicleGateway::NewStub(channel);
 
-    VechileGatewayClient::VechileGatewayClient(const std::string &server_add) {
-        auto channel = grpc::CreateChannel(server_add, grpc::InsecureChannelCredentials());
-        auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
+    auto state = channel->GetState(true);
+    spdlog::info("Channel state: {}", static_cast<int>(state));
 
-        if (!channel->WaitForConnected(deadline)) {
-            spdlog::error("Failed to connect to server!");
+
+    cq_thread = std::thread(&VechileGatewayClient::ProcessCompletionQueue, this);
+}
+
+VechileGatewayClient::~VechileGatewayClient()
+{
+    shutdown_requested = true;
+    cq.Shutdown();
+    if (cq_thread.joinable()) {
+        cq_thread.join();
+    }
+}
+
+void VechileGatewayClient::ProcessCompletionQueue() {
+    void* tag;
+    bool ok;
+
+    while (cq.Next(&tag, &ok)) {
+        AsyncCallDataBase* call = static_cast<AsyncCallDataBase*>(tag);
+
+        std::lock_guard<std::mutex> lock(call->mu);
+
+        if (ok && call->status.ok()) {
+            spdlog::info("Async call succeeded");
+            call->result = true;
         } else {
-            spdlog::info("Successfully connected to server");
+            if (!ok) {
+                spdlog::error("Async call failed - operation not ok");
+            } else {
+                spdlog::error("Async call failed - Status: {}", call->status.error_message());
+            }
+            call->result = false;
         }
 
-        stub = vehicle_gateway::VehicleGateway::NewStub(channel);
-
-        auto state = channel->GetState(true);
-        spdlog::info("Channel state: {}", static_cast<int>(state));
-
+        call->done = true;
+        call->cv.notify_one();
     }
 
-    bool VechileGatewayClient::Login(const std::string &vin_number_val,
-                const std::string & trip_id_val
+    spdlog::info("Completion queue thread exiting");
+}
 
-         )
-    {
-         vehicle_gateway::LoginRequest req;
-        req.set_vin_number(vin_number_val);
-        req.set_trip_id(trip_id_val);
+bool VechileGatewayClient::Login(const std::string &vin_number_val, const std::string &trip_id_val) {
+    spdlog::info("Login: Creating request");
 
-        vehicle_gateway::LoginRespose resp;
-         grpc::ClientContext ctx;
+    vehicle_gateway::LoginRequest req;
+    req.set_vin_number(vin_number_val);
+    req.set_trip_id(trip_id_val);
 
-        bool done = false, res = false;
+    auto call = std::make_unique<LoginCallData>();
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
 
-        std::condition_variable cv;
-        std::mutex mu;
+    spdlog::info("Login: Making async call with completion queue");
 
-        stub->experimental_async()->VechileLogin(&ctx, &req, &resp,
-        [&mu , &cv , &done ,&resp , &res](grpc::Status status) {
-            bool ret;
-            if (!status.ok()) {
-                spdlog::info("login failed ");
-                ret = false;
-            }
-            else {
-                spdlog::info("login succeeded");
-                ret = true;
-            }
-            res = ret;
+    call->response_reader = stub->AsyncVechileLogin(&call->ctx, req, &cq);
+    call->response_reader->Finish(&call->response, &call->status, (void*)call.get());
 
-            std::lock_guard<std::mutex> lock(mu);
-            done = true;
-            cv.notify_one();
-        }
-        );
+    std::unique_lock<std::mutex> lock(call->mu);
+    spdlog::info("Login: Waiting for completion");
+    call->cv.wait(lock, [&call] { return call->done; });
 
-        std::unique_lock<std::mutex> lock(mu);
-        cv.wait(lock, [&done] { return done; });
+    bool result = call->result;
+    spdlog::info("Login: Completed with result: {}", result);
 
-        return res ;
+    return result;
+}
 
-    }
+bool VechileGatewayClient::SendEta(
+    const std::string &vin_number_val,
+    const std::string &trip_id_val,
+    double time_val,
+    double fare_val) {
 
-    bool VechileGatewayClient::SendEta (
-        const std::string &vin_number_val,
-        const std::string & trip_id_val,
-        double time_val,
-        double fare_val
-            ) {
+    spdlog::info("SendEta: Creating request");
 
+    vehicle_gateway::EtaRequest req;
+    req.set_vin_number(vin_number_val);
+    req.set_trip_id(trip_id_val);
+    req.set_time(time_val);
+    req.set_fare(fare_val);
 
-        spdlog::info("send eta: Creating request");
+    auto call = std::make_unique<EtaCallData>();
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
 
-        vehicle_gateway::EtaRequest req;
-        req.set_vin_number(vin_number_val);
-        req.set_trip_id(trip_id_val);
-        req.set_time(time_val);
-        req.set_fare(fare_val);
+    spdlog::info("SendEta: Making async call with completion queue");
 
-        vehicle_gateway::EtaResponse resp;
-        grpc::ClientContext ctx;
-        ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    call->response_reader = stub->AsyncSendEta(&call->ctx, req, &cq);
+    call->response_reader->Finish(&call->response, &call->status, (void*)call.get());
 
+    std::unique_lock<std::mutex> lock(call->mu);
+    spdlog::info("SendEta: Waiting for completion");
+    call->cv.wait(lock, [&call] { return call->done; });
 
-       bool done = false, res = false;
+    bool result = call->result;
+    spdlog::info("SendEta: Completed with result: {}", result);
 
-        std::condition_variable cv;
-        std::mutex mu;
-        spdlog::info("send eta : Acquiring lock");
+    return result;
+}
 
+bool VechileGatewayClient::SendStatus(
+    const std::string &vin_number_val,
+    const std::string &trip_id_val,
+    const std::string &status_val) {
 
-        spdlog::info("send eta : Making async call");
-        stub->experimental_async()->SendEta(&ctx, &req, &resp,
-        [ &mu , &res , &cv,&resp ,&done](grpc::Status status) {
-          bool ret;
-            if (!status.ok()) {
-                spdlog::info("send Eta failed ");
-                spdlog::info("error status:{}",status.error_message());
-               ret = false;
-            }
-            else {
-                spdlog::info("send Eta succeeded");
-               ret = true;
-            }
-            res = ret;
+    spdlog::info("SendStatus: Creating request");
 
-             std::lock_guard<std::mutex> lock(mu);
-            done = true;
-            cv.notify_one();
-        }
-        );
+    vehicle_gateway::StatusRequest req;
+    req.set_vin_number(vin_number_val);
+    req.set_trip_id(trip_id_val);
+    req.set_status(status_val);
 
-        std::unique_lock<std::mutex> lock(mu);
+    auto call = std::make_unique<StatusCallData>();
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
 
-        spdlog::info("send eta : Waiting for callback");
-        cv.wait(lock, [&done] { return done; });
+    spdlog::info("SendStatus: Making async call with completion queue");
 
+    call->response_reader = stub->AsyncSendStatus(&call->ctx, req, &cq);
+    call->response_reader->Finish(&call->response, &call->status, (void*)call.get());
 
+    std::unique_lock<std::mutex> lock(call->mu);
+    spdlog::info("SendStatus: Waiting for completion");
+    call->cv.wait(lock, [&call] { return call->done; });
 
-        return res ;
+    bool result = call->result;
+    spdlog::info("SendStatus: Completed with result: {}", result);
 
-    }
+    return result;
+}
 
+bool VechileGatewayClient::SendArrive(
+    const std::string &vin_number_val,
+    const std::string &trip_id_val,
+    double long_val,
+    double lat_val) {
 
+    spdlog::info("SendArrive: Creating request");
 
+    vehicle_gateway::ArriveRequest req;
+    req.set_vin_number(vin_number_val);
+    req.set_trip_id(trip_id_val);
+    req.set_long_(long_val);
+    req.set_lat(lat_val);
 
-    bool VechileGatewayClient::SendStatus(
-     const std::string &vin_number_val,
-     const std::string & trip_id_val,
-     const std::string & status_val
-         ) {
-        vehicle_gateway::StatusRequest req;
-        req.set_vin_number(vin_number_val);
-        req.set_trip_id(trip_id_val);
-        req.set_status(status_val);
+    auto call = std::make_unique<ArriveCallData>();
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
 
-        vehicle_gateway::StatusResponse resp;
-        grpc::ClientContext ctx;
+    spdlog::info("SendArrive: Making async call with completion queue");
 
-        bool done = false, res = false;
+    call->response_reader = stub->AsyncSendArrive(&call->ctx, req, &cq);
+    call->response_reader->Finish(&call->response, &call->status, (void*)call.get());
 
-        std::condition_variable cv;
-        std::mutex mu;
+    std::unique_lock<std::mutex> lock(call->mu);
+    spdlog::info("SendArrive: Waiting for completion");
+    call->cv.wait(lock, [&call] { return call->done; });
 
-        stub->experimental_async()->SendStatus(&ctx, &req, &resp,
-        [&mu , &cv , &done ,&resp , &res](grpc::Status status) {
-            bool ret;
-            if (!status.ok()) {
-                spdlog::info("send status failed ");
-                ret = false;
-            }
-            else {
-                spdlog::info("send status succeeded");
-                ret = true;
-            }
-            res = ret;
+    bool result = call->result;
+    spdlog::info("SendArrive: Completed with result: {}", result);
 
-            std::lock_guard<std::mutex> lock(mu);
-            done = true;
-            cv.notify_one();
-        }
-        );
+    return result;
+}
 
-        std::unique_lock<std::mutex> lock(mu);
-        cv.wait(lock, [&done] { return done; });
+void start_trip_flow()
+{
 
-        return res ;
-
-
-
-
-    }
-
-    bool VechileGatewayClient::SendArrive(
-     const std::string &vin_number_val,
-     const std::string & trip_id_val,
-     double long_val,
-     double lat_val
-         ) {
-        vehicle_gateway::ArriveRequest req;
-        req.set_vin_number(vin_number_val);
-        req.set_trip_id(trip_id_val);
-        req.set_long_(long_val);
-        req.set_lat(lat_val);
-
-        vehicle_gateway::ArriveResponse resp;
-        grpc::ClientContext ctx;
-
-        bool done = false, res = false ;
-
-        std::condition_variable cv;
-        std::mutex mu;
-
-        stub->experimental_async()->SendArrive(&ctx, &req, &resp,
-        [&mu , &cv , &done ,&resp , &res](grpc::Status status) {
-            bool ret;
-            if (!status.ok()) {
-                spdlog::info("send arrive failed ");
-                ret = false;
-            }
-            else {
-                spdlog::info("send arrive succeeded");
-                ret = true;
-            }
-            res = ret;
-
-            std::lock_guard<std::mutex> lock(mu);
-            done = true;
-            cv.notify_one();
-        }
-        );
-
-        std::unique_lock<std::mutex> lock(mu);
-        cv.wait(lock, [&done] { return done; });
-
-        return res ;
-
-
-    }
-
-    void start_trip_flow() {
-
-
-
-
-    }
-
-
-
-
-
-
-
+}
