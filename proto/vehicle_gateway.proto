@@ -29,7 +29,7 @@ message LoginRespose
 message EtaRequest
 {
   string vin_number = 1;
-  string trip_id = 2;
+  string request_id = 2;
   double time = 3;
   double fare = 4;
 }

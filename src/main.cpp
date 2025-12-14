@@ -12,12 +12,14 @@
 std::atomic<bool> shutdown_req{false};
 cloud_gateway::Gateway* global_gateway = nullptr;
 
+extern void StopTripFlow();
 
 void signal_handler(int sig)
 {
 
     spdlog::info("shutdown signal is called");
     shutdown_req = true;
+
 
     if (global_gateway) {
         global_gateway->shutdown();
@@ -35,7 +37,25 @@ int main()
     std::signal(SIGTERM, signal_handler);
 
 
-    gateway.run();
+    std::thread gateway_thread([&gateway]() {
+      gateway.run();
+  });
+
+     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
+    start_trip_flow("VIN123", "TRIP456");
+
+
+
+
+
+    gateway_thread.join();
+
+
+    StopTripFlow();
+
+
+    spdlog::info("Clean exit");
 
 
     return 0;

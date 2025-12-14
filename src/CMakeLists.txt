@@ -27,6 +27,8 @@ target_include_directories(gateway_lib
 target_link_libraries(gateway_lib
         PUBLIC
         proto_lib
+        #added
+        client_lib
         gRPC::grpc++
         Boost::system
         Boost::thread

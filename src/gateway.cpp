@@ -1,5 +1,7 @@
 #include "gateway.h"
 
+#include "mqtt_topics.h"
+
 cloud_gateway::Gateway::Gateway() :
     httpClient(std::make_unique<HttpClient>()),
     mqttClient(std::make_unique<MqttClient>("broker.hivemq.com", 1883, "boost_mqtt5_test_client")),
@@ -23,11 +25,11 @@ void cloud_gateway::Gateway::run() {
     cq = builder.AddCompletionQueue();
     server = builder.BuildAndStart();
     if (!server) {
-        spdlog::error("Server failed to start!");
+        spdlog::error("[SERVER]Server failed to start!");
         return;
     }
 
-    spdlog::info("Server listening on {}", server_address);
+    spdlog::info("[SERVER]Server listening on {}", server_address);
 
     cq_thread = std::thread(&Gateway::HandleRpcs, this);
 
@@ -39,16 +41,16 @@ void cloud_gateway::Gateway::run() {
 
 void cloud_gateway::Gateway::HandleRpcs()
 {
-    spdlog::info("Starting RPC handler thread");
+    spdlog::info("[SERVER]Starting RPC handler thread");
     service->Run(cq.get());
-    spdlog::info("RPC handler thread exiting");
+    spdlog::info("[SERVER]RPC handler thread exiting");
 }
 
 void cloud_gateway::Gateway::shutdown() {
 
 
 
-    spdlog::info("Gateway shutdown initiated");
+    spdlog::info("[SERVER]Gateway shutdown initiated");
 
     if (cq) {
         cq->Shutdown();
@@ -59,10 +61,6 @@ void cloud_gateway::Gateway::shutdown() {
     }
     
 
-    
-    if (cq_thread.joinable()) {
-        cq_thread.join();
-    }
     
     if (mqttClient) {
         mqttClient->mqtt_disconnect();
@@ -76,21 +74,13 @@ void cloud_gateway::Gateway::shutdown() {
 void cloud_gateway::Gateway::initialize() {
     mqttClient->start_runner();
     mqttClient->mqtt_connect();
-    mqttClient->mqtt_subscribe("topic/trip/init");
-    mqttClient->mqtt_subscribe("topic/trip/move");
+    mqttClient->mqtt_subscribe(MqttTopics::TripInit);
+    mqttClient->mqtt_subscribe(MqttTopics::TripMove);
 
     mqttClient->set_message_arrived_handler([](const std::string &topic, const std::string &payload) {
-        parsing_received_command(topic, payload);
+
+        on_mqtt_message(topic , payload);
     });
     mqttClient->start_receive_loop();
 }
 
-void  cloud_gateway::parsing_received_command(const std::string& topic, const std::string& payload) {
-    if (topic == "topic/trip/init") {
-        spdlog::info("received message on init topic");
-    } else if (topic == "topic/trip/move") {
-        spdlog::info("received message on move topic");
-    } else {
-        spdlog::info("undefined topic");
-    }
-}

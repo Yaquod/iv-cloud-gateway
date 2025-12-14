@@ -6,6 +6,7 @@
 
 #include "http_client/http_client.h"
 #include "mqtt_client/mqtt_client.h"
+#include "client/client.h"
 #include "grpc/vehicle_gateway_service.h"
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server_builder.h>
@@ -13,7 +14,7 @@
 
 namespace cloud_gateway {
 
- void parsing_received_command(const std::string& topic, const std::string& payload);
+
 
  class Gateway {
  public:

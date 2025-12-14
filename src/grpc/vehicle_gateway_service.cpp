@@ -1,6 +1,8 @@
 
 #include "vehicle_gateway_service.h"
 
+#include "../mqtt_topics.h"
+
 VehicleGatewayServiceImp::VehicleGatewayServiceImp(MqttClient* mqtt, HttpClient* http)
     : mqttClient(mqtt), httpClient(http) {
 }
@@ -59,9 +61,9 @@ void VehicleGatewayServiceImp::LoginCallData::Proceed()
     } else if (status_ == PROCESS) {
         new LoginCallData(service_, cq_, http_client_);
 
-        spdlog::info("Processing Login request for VIN: {}", request_.vin_number());
+       // spdlog::info("Processing Login request for VIN: {}", request_.vin_number());
 
-        std::string url = "/api/vechile/login";
+        std::string url = MqttTopics::URL;
         std::string payload = request_.DebugString();
 
         auto httpResponse = http_client_->Post(url, {}, payload);
@@ -101,9 +103,9 @@ void VehicleGatewayServiceImp::EtaCallData::Proceed() {
     } else if (status_ == PROCESS) {
         new EtaCallData(service_, cq_, mqtt_client_);
 
-        spdlog::info("Processing SendEta request for VIN: {}", request_.vin_number());
+        //spdlog::info("Processing SendEta request for VIN: {}", request_.vin_number());
 
-        std::string topic = "topic/trip/eta";
+        std::string topic = MqttTopics::TripEta;
         status_ = WAIT_MQTT;
 
 
@@ -152,9 +154,9 @@ void VehicleGatewayServiceImp::StatusCallData::Proceed() {
     } else if (status_ == PROCESS) {
         new StatusCallData(service_, cq_, mqtt_client_);
 
-        spdlog::info("Processing SendStatus request for VIN: {}", request_.vin_number());
+      //  spdlog::info("Processing SendStatus request for VIN: {}", request_.vin_number());
 
-        std::string topic = "topic/trip/status";
+        std::string topic = MqttTopics::TripStatus;
         status_ = WAIT_MQTT;
 
         mqtt_client_->mqtt_publish(topic, request_.DebugString(),
@@ -199,9 +201,9 @@ void VehicleGatewayServiceImp::ArriveCallData::Proceed() {
     } else if (status_ == PROCESS) {
         new ArriveCallData(service_, cq_, mqtt_client_);
 
-        spdlog::info("Processing SendArrive request for VIN: {}", request_.vin_number());
+        //spdlog::info("Processing SendArrive request for VIN: {}", request_.vin_number());
 
-        std::string topic = "topic/trip/arrive";
+        std::string topic = MqttTopics::TripArrive;
         status_ = WAIT_MQTT;
 
         mqtt_client_->mqtt_publish(topic, request_.DebugString(),

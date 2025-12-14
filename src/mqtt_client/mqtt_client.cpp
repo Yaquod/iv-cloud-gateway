@@ -48,7 +48,7 @@ void cloud_gateway::MqttClient::mqtt_publish(const std::string& topic,
                                              const std::string& payload , std::function<void(bool success, const std::string msg)> publish_cb)
 {
 
-  spdlog::info("trying to publish");
+  //spdlog::info("trying to publish");
 
   client_.async_publish<boost::mqtt5::qos_e::at_most_once>(
       topic, payload, boost::mqtt5::retain_e::yes,
