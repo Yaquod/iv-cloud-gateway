@@ -13,6 +13,7 @@
 
 #define path_planning_time 5
 #define moving_time 15
+#define client_duration 3
 
 
 enum class TripState {

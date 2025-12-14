@@ -73,7 +73,7 @@ bool VechileGatewayClient::Login(const std::string &vin_number_val, const std::s
     req.set_trip_id(trip_id_val);
 
     auto call = std::make_unique<LoginCallData>();
-    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(client_duration));
 
    // spdlog::info("Login: Making async call with completion queue");
 
@@ -97,6 +97,7 @@ bool VechileGatewayClient::SendEta(
     double fare_val) {
 
    // spdlog::info("SendEta: Creating request");
+    auto start = std::chrono::steady_clock::now();
 
     vehicle_gateway::EtaRequest req;
     req.set_vin_number(vin_number_val);
@@ -105,7 +106,7 @@ bool VechileGatewayClient::SendEta(
     req.set_fare(fare_val);
 
     auto call = std::make_unique<EtaCallData>();
-    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(client_duration));
 
    // spdlog::info("SendEta: Making async call with completion queue");
 
@@ -115,6 +116,13 @@ bool VechileGatewayClient::SendEta(
     std::unique_lock<std::mutex> lock(call->mu);
     // spdlog::info("SendEta: Waiting for completion");
     call->cv.wait(lock, [&call] { return call->done; });
+
+    auto end = std::chrono::steady_clock::now();
+
+    auto dur =
+    std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    spdlog::info("[RPC] SendEta took {}ms", dur);
+
 
     bool result = call->result;
     // spdlog::info("SendEta: Completed with result: {}", result);
@@ -128,6 +136,7 @@ bool VechileGatewayClient::SendStatus(
     const std::string &status_val) {
 
     // spdlog::info("SendStatus: Creating request");
+    auto start = std::chrono::steady_clock::now();
 
     vehicle_gateway::StatusRequest req;
     req.set_vin_number(vin_number_val);
@@ -135,7 +144,7 @@ bool VechileGatewayClient::SendStatus(
     req.set_status(status_val);
 
     auto call = std::make_unique<StatusCallData>();
-    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(client_duration));
 
     // spdlog::info("SendStatus: Making async call with completion queue");
 
@@ -145,6 +154,12 @@ bool VechileGatewayClient::SendStatus(
     std::unique_lock<std::mutex> lock(call->mu);
     // spdlog::info("SendStatus: Waiting for completion");
     call->cv.wait(lock, [&call] { return call->done; });
+
+    auto end = std::chrono::steady_clock::now();
+
+    auto dur =
+    std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    spdlog::info("[RPC] SendEta took {}ms", dur);
 
     bool result = call->result;
     // spdlog::info("SendStatus: Completed with result: {}", result);
@@ -159,6 +174,7 @@ bool VechileGatewayClient::SendArrive(
     double lat_val) {
 
     // spdlog::info("SendArrive: Creating request");
+    auto start = std::chrono::steady_clock::now();
 
     vehicle_gateway::ArriveRequest req;
     req.set_vin_number(vin_number_val);
@@ -167,7 +183,7 @@ bool VechileGatewayClient::SendArrive(
     req.set_lat(lat_val);
 
     auto call = std::make_unique<ArriveCallData>();
-    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    call->ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(client_duration));
 
     // spdlog::info("SendArrive: Making async call with completion queue");
 
@@ -177,6 +193,13 @@ bool VechileGatewayClient::SendArrive(
     std::unique_lock<std::mutex> lock(call->mu);
     // spdlog::info("SendArrive: Waiting for completion");
     call->cv.wait(lock, [&call] { return call->done; });
+
+    auto end = std::chrono::steady_clock::now();
+
+    auto dur =
+    std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    spdlog::info("[RPC] SendEta took {}ms", dur);
+
 
     bool result = call->result;
    // spdlog::info("SendArrive: Completed with result: {}", result);

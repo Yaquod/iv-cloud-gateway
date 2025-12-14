@@ -41,7 +41,7 @@ int main()
       gateway.run();
   });
 
-     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+     std::this_thread::sleep_for(std::chrono::milliseconds(7000));
 
     start_trip_flow("VIN123", "TRIP456");
 
