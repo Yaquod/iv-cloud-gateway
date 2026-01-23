@@ -8,6 +8,25 @@ The Vehicle Cloud Gateway serves as a critical middleware component in the Yaquo
 
 ## Prerequisites
 
+### macOS
+
+First, ensure you have [Homebrew](https://brew.sh/) installed. Then, install all dependencies:
+
+```bash
+brew install \
+    cmake \
+    git \
+    pkg-config \
+    ninja \
+    openssl \
+    zlib \
+    grpc \
+    protobuf \
+    boost \
+    libpaho-mqtt \
+    paho-cpp
+```
+
 ### Ubuntu
 
 ```bash
@@ -56,8 +75,7 @@ sudo dnf install -y \
 Clone the repository with submodules (required for third-party dependencies):
 
 ```bash
-git clgit clone --recursive https://github.com/Yaquod/iv-cloud-gateway.git
-one --recursive https://github.com/Yaquod/iv-cloud-gateway.git
+git clone --recursive https://github.com/Yaquod/iv-cloud-gateway.git
 cd iv-cloud-gateway
 ```
 
@@ -95,7 +113,13 @@ cmake -DBUILD_TESTS=ON -DENABLE_SANITIZERS=OFF ..
 ### 4. Build
 
 ```bash
-make -j$(nproc)
+if [[ "$(uname)" == "Darwin" ]]; then
+  # For macOS
+  make -j$(sysctl -n hw.ncpu)
+else
+  # For Linux
+  make -j$(nproc)
+fi
 ```
 
 Or for a specific target:
