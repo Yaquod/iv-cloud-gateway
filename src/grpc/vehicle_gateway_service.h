@@ -1,140 +1,143 @@
 #ifndef VEHICLE_GATEWAY_SERVICE_H
 #define VEHICLE_GATEWAY_SERVICE_H
 
-#include "http_client/http_client.h"
-#include "mqtt_client/mqtt_client.h"
-#include <mutex>
-#include <spdlog/spdlog.h>
 #include <grpcpp/grpcpp.h>
-#include <thread>
+#include <spdlog/spdlog.h>
+
 #include <memory>
+#include <mutex>
+#include <thread>
 
 #include "../../build/proto/vehicle_gateway.grpc.pb.h"
+#include "http_client/http_client.h"
+#include "mqtt_client/mqtt_client.h"
 
-using grpc::Status;
-using grpc::ServerContext;
-using cloud_gateway::MqttClient;
 using cloud_gateway::HttpClient;
+using cloud_gateway::MqttClient;
+using grpc::ServerContext;
+using grpc::Status;
 
 class VehicleGatewayServiceImp {
-public:
-    VehicleGatewayServiceImp(MqttClient* mqtt, HttpClient* http);
-    ~VehicleGatewayServiceImp();
+ public:
+  VehicleGatewayServiceImp(MqttClient* mqtt, HttpClient* http);
+  ~VehicleGatewayServiceImp();
 
-    void Run(grpc::ServerCompletionQueue* cq);
-    void Shutdown();
+  void Run(grpc::ServerCompletionQueue* cq);
+  void Shutdown();
 
-    vehicle_gateway::VehicleGateway::AsyncService* GetAsyncService()
-    {
-        return &async_service_;
-    }
+  vehicle_gateway::VehicleGateway::AsyncService* GetAsyncService() {
+    return &async_service_;
+  }
 
-private:
-    std::mutex mutex_;
-    MqttClient* mqttClient;
-    HttpClient* httpClient;
-    bool shutdown_requested = false;
+  void SetAuthToken(const std::string& token) {
+    std::lock_guard<std::mutex> lock(token_mutex);
+    auth_token = token;
+  }
 
-    vehicle_gateway::VehicleGateway::AsyncService async_service_;
+  std::string GetAuthToken() {
+    std::lock_guard<std::mutex> lock(token_mutex);
+    return auth_token;
+  }
 
-    // Base class for all async call data
-    class CallData
-    {
-    public:
-        virtual void Proceed() = 0;
-        virtual ~CallData() = default;
-    };
+ private:
+  std::mutex mutex_;
+  MqttClient* mqttClient;
+  HttpClient* httpClient;
 
+  bool shutdown_requested = false;
+  std::string auth_token;
+  std::mutex token_mutex;
+  vehicle_gateway::VehicleGateway::AsyncService async_service_;
 
-    class LoginCallData : public CallData
-    {
-    public:
-        LoginCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
-                      grpc::ServerCompletionQueue* cq,
-                      HttpClient* http_client);
-        void Proceed() override;
+  // Base class for all async call data
+  class CallData {
+   public:
+    virtual void Proceed() = 0;
+    virtual ~CallData() = default;
+  };
 
-    private:
-        vehicle_gateway::VehicleGateway::AsyncService* service_;
-        grpc::ServerCompletionQueue* cq_;
-        grpc::ServerContext ctx_;
-        HttpClient* http_client_;
+  class UpdateVehicleLocationCallData : public CallData {
+   public:
+    UpdateVehicleLocationCallData(
+        vehicle_gateway::VehicleGateway::AsyncService* service,
+        grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
 
-        vehicle_gateway::LoginRequest request_;
-        vehicle_gateway::LoginRespose response_;
-        grpc::ServerAsyncResponseWriter<vehicle_gateway::LoginRespose> responder_;
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
 
-        enum CallStatus { CREATE, PROCESS, FINISH };
-        CallStatus status_;
-    };
+    vehicle_gateway::UpdateVehicleLocationRequest request_;
+    vehicle_gateway::UpdateVehicleLocationResponse response_;
+    grpc::ServerAsyncResponseWriter<
+        vehicle_gateway::UpdateVehicleLocationResponse>
+        responder_;
 
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
 
-    class EtaCallData : public CallData
-    {
-    public:
-        EtaCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
-                    grpc::ServerCompletionQueue* cq,
-                    MqttClient* mqtt_client);
-        void Proceed() override;
+  class EtaCallData : public CallData {
+   public:
+    EtaCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
+                grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
 
-    private:
-        vehicle_gateway::VehicleGateway::AsyncService* service_;
-        grpc::ServerCompletionQueue* cq_;
-        grpc::ServerContext ctx_;
-        MqttClient* mqtt_client_;
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
 
-        vehicle_gateway::EtaRequest request_;
-        vehicle_gateway::EtaResponse response_;
-        grpc::ServerAsyncResponseWriter<vehicle_gateway::EtaResponse> responder_;
+    vehicle_gateway::EtaRequest request_;
+    vehicle_gateway::EtaResponse response_;
+    grpc::ServerAsyncResponseWriter<vehicle_gateway::EtaResponse> responder_;
 
-        enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
-        CallStatus status_;
-    };
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
 
+  class StatusCallData : public CallData {
+   public:
+    StatusCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
+                   grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
 
-    class StatusCallData : public CallData
-    {
-    public:
-        StatusCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
-                       grpc::ServerCompletionQueue* cq,
-                       MqttClient* mqtt_client);
-        void Proceed() override;
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
 
-    private:
-        vehicle_gateway::VehicleGateway::AsyncService* service_;
-        grpc::ServerCompletionQueue* cq_;
-        grpc::ServerContext ctx_;
-        MqttClient* mqtt_client_;
+    vehicle_gateway::StatusRequest request_;
+    vehicle_gateway::StatusResponse response_;
+    grpc::ServerAsyncResponseWriter<vehicle_gateway::StatusResponse> responder_;
 
-        vehicle_gateway::StatusRequest request_;
-        vehicle_gateway::StatusResponse response_;
-        grpc::ServerAsyncResponseWriter<vehicle_gateway::StatusResponse> responder_;
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
 
-        enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
-        CallStatus status_;
-    };
+  class ArriveCallData : public CallData {
+   public:
+    ArriveCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
+                   grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
 
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
 
-    class ArriveCallData : public CallData {
-    public:
-        ArriveCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
-                       grpc::ServerCompletionQueue* cq,
-                       MqttClient* mqtt_client);
-        void Proceed() override;
+    vehicle_gateway::ArriveRequest request_;
+    vehicle_gateway::ArriveResponse response_;
+    grpc::ServerAsyncResponseWriter<vehicle_gateway::ArriveResponse> responder_;
 
-    private:
-        vehicle_gateway::VehicleGateway::AsyncService* service_;
-        grpc::ServerCompletionQueue* cq_;
-        grpc::ServerContext ctx_;
-        MqttClient* mqtt_client_;
-
-        vehicle_gateway::ArriveRequest request_;
-        vehicle_gateway::ArriveResponse response_;
-        grpc::ServerAsyncResponseWriter<vehicle_gateway::ArriveResponse> responder_;
-
-        enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
-        CallStatus status_;
-    };
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
 };
 
 #endif

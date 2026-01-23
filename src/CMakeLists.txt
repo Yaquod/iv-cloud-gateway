@@ -4,6 +4,7 @@ add_subdirectory(mqtt_client)
 add_subdirectory(grpc)
 #added
 add_subdirectory(client)
+add_subdirectory(auth_manager)
 
 add_library(gateway_lib STATIC
         gateway.cpp
@@ -11,6 +12,10 @@ add_library(gateway_lib STATIC
         $<TARGET_OBJECTS:mqtt_client_lib>
         #added
         $<TARGET_OBJECTS:vehicle_gateway_service_lib>
+        $<TARGET_OBJECTS:vehicle_gateway_auth_manager_lib>
+
+
+
 
 )
 
