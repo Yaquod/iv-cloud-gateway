@@ -1,9 +1,3 @@
-cmake_minimum_required(VERSION 3.16)
-
-project(vehicle_gateway_client CXX)
-
-set(CMAKE_CXX_STANDARD 17)
-
 # Include paths
 include_directories(
         ${CMAKE_SOURCE_DIR}/build/proto       # generated vehicle_gateway.pb.h
