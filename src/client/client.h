@@ -15,19 +15,23 @@ void start_trip_flow();
 
 class VechileGatewayClient {
  public:
-  VechileGatewayClient(const std::string &server_add);
+  explicit VechileGatewayClient(const std::string &server_add);
+  // cppcheck-suppress unusedFunction
   void Login(const std::string &vin_number_val, const std::string &trip_id_val
 
   );
 
+  // cppcheck-suppress unusedFunction
   void SendEta(const std::string &vin_number_val,
                const std::string &trip_id_val, double time_val,
                double fare_val);
 
+  // cppcheck-suppress unusedFunction
   void SendStatus(const std::string &vin_number_val,
                   const std::string &trip_id_val,
                   const std::string &status_val);
 
+  // cppcheck-suppress unusedFunction
   void SendArrive(const std::string &vin_number_val,
                   const std::string &trip_id_val, double long_val,
                   double lat_val);
