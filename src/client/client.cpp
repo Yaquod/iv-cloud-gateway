@@ -3,8 +3,7 @@
 //
 
 #include "client.h"
-
-#include "../../build/proto/vehicle_gateway.pb.h"
+#include "vehicle_gateway.pb.h"
 
 VechileGatewayClient::VechileGatewayClient(const std::string &server_add) {
   auto channel =
@@ -86,9 +85,4 @@ void VechileGatewayClient::SendArrive(const std::string &vin_number_val,
   } else
     spdlog::error("RPC send status failed in send status: {}",
                   status.error_message());
-}
-
-void start_trip_flow() {
-  VechileGatewayClient client("localhost:50051");
-  client.Login("1234", "trip_id1");
 }
