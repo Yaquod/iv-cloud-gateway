@@ -13,7 +13,8 @@ namespace cloud_gateway {
 class MqttClient {
  public:
   MqttClient(std::string broker, uint16_t port, std::string clientId);
-  using MessageArrivalCallback = std::function<void(const std::string& topic, const std::string&payload )>;
+  using MessageArrivalCallback =
+      std::function<void(const std::string& topic, const std::string& payload)>;
   void set_message_arrived_handler(MessageArrivalCallback callback);
 
   void mqtt_connect();
@@ -22,7 +23,6 @@ class MqttClient {
   void mqtt_subscribe(const std::string& topic);
   void start_runner();
   void start_receive_loop();
-
 
  private:
   boost::asio::io_context ioc_;
@@ -34,7 +34,7 @@ class MqttClient {
   std::string broker_;
   uint16_t port_;
   std::string clientId_;
- MessageArrivalCallback cb;
+  MessageArrivalCallback cb;
 };
 }  // namespace cloud_gateway
 #endif  // IV_CLOUD_GATEWAY_MQTT_CLIENT_H

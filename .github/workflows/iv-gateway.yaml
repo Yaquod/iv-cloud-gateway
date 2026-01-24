@@ -135,53 +135,6 @@ jobs:
           max_attempts: 3
           command: cd build && ctest --output-on-failure
 
-  build-fedora:
-    name: Build Fedora 42
-    runs-on: ubuntu-latest
-    container: fedora:42
-
-    steps:
-      - name: Install Git
-        run: dnf install -y git
-
-      - name: Fix Git Ownership (Container Issue)
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install Dependencies
-        run: |
-          dnf install -y \
-            gcc-c++ cmake ninja-build \
-            openssl-devel zlib-devel boost-devel \
-            grpc-devel grpc-plugins protobuf-devel
-
-      - name: Configure
-        run: |
-          cmake -B build -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTS=ON
-
-      - name: Build
-        run: cmake --build build --parallel $(nproc)
-
-      - name: Test
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 10
-          max_attempts: 3
-          command: cd build && ctest --output-on-failure
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: vehicle-gateway-fedora
-          path: build/vehicle_gateway
-          retention-days: 7
-
   sanitizers:
     name: Sanitizers (${{ matrix.sanitizer }})
     runs-on: ubuntu-24.04

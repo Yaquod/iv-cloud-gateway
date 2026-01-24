@@ -29,7 +29,6 @@ target_link_libraries(gateway_lib
         proto_lib
         gRPC::grpc++_unsecure
         async_mqtt5
-        vgw_paho_mqtt_iface
         Boost::thread
         nlohmann_json::nlohmann_json
         OpenSSL::SSL

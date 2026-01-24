@@ -101,42 +101,15 @@ if(NOT TARGET gRPC::grpc_cpp_plugin)
     message(FATAL_ERROR "gRPC C++ plugin target (gRPC::grpc_cpp_plugin) not found. Check your gRPC installation.")
 endif()
 
-# --- Paho MQTT Dependency Handling ---
-# Create an interface library to represent the Paho MQTT dependency.
-add_library(vgw_paho_mqtt_iface INTERFACE)
-
-# First, try to find Paho MQTT on the system using pkg-config. This is ideal for CI.
-find_package(PkgConfig QUIET)
-if(PKG_CONFIG_FOUND)
-    pkg_check_modules(PC_PAHO_MQTT_C QUIET paho-mqtt3as)
-    pkg_check_modules(PC_PAHO_MQTT_CPP QUIET paho-mqttpp3)
-endif()
-
-# If both system libraries were found, link them to our interface target.
-if(PC_PAHO_MQTT_C_FOUND AND PC_PAHO_MQTT_CPP_FOUND)
-    message(STATUS "Found Paho MQTT via pkg-config, will use system libraries.")
-    target_link_libraries(vgw_paho_mqtt_iface INTERFACE PkgConfig::PC_PAHO_MQTT_CPP)
-else()
-    # Otherwise, set an option to build them from the third_party submodule.
-    message(STATUS "Paho MQTT not found on system. Falling back to build from source.")
-    set(VGW_BUILD_PAHO_FROM_SOURCE ON CACHE INTERNAL "Build Paho MQTT from submodule source")
-endif()
-
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)
-
-# If we built Paho from source, we must link it to our interface library *after*
-if(VGW_BUILD_PAHO_FROM_SOURCE)
-    target_link_libraries(vgw_paho_mqtt_iface INTERFACE
-        $<TARGET_FILE:paho-mqttpp3-static>)
-endif()
 
 add_subdirectory(proto)
 
 add_subdirectory(src)
 
 add_executable(vehicle_gateway src/main.cpp)
-target_link_libraries(vehicle_gateway PRIVATE gateway_lib vgw_paho_mqtt_iface)
+target_link_libraries(vehicle_gateway PRIVATE gateway_lib)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_command(TARGET vehicle_gateway POST_BUILD
@@ -181,10 +154,6 @@ message(STATUS "Third-Party (built from source):")
 message(STATUS "  nlohmann/json")
 message(STATUS "  spdlog")
 message(STATUS "  yaml-cpp")
-if(VGW_BUILD_PAHO_FROM_SOURCE)
-    message(STATUS "  paho-mqtt-c (from source)")
-    message(STATUS "  paho-mqtt-cpp (from source)")
-endif()
 if(BUILD_TESTS)
     message(STATUS "  GoogleTest")
 endif()
