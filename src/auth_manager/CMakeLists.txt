@@ -1,5 +1,3 @@
-
-# src/grpc_server/CMakeLists.txt
 add_library(vehicle_gateway_auth_manager_lib OBJECT
         auth_manager.cpp
         auth_manager.h
