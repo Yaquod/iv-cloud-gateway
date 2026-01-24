@@ -156,8 +156,7 @@ jobs:
         run: |
           dnf install -y \
             gcc-c++ cmake ninja-build \
-            openssl-devel zlib-devel \
-            boost-devel paho-mqtt-c-devel paho-mqtt-cpp-devel \
+            openssl-devel zlib-devel boost-devel \
             grpc-devel grpc-plugins protobuf-devel
 
       - name: Configure
