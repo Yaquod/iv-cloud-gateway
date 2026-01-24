@@ -83,6 +83,43 @@ jobs:
           path: build/vehicle_gateway
           retention-days: 7
 
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Dependencies
+        run: |
+          brew install cmake ninja boost grpc protobuf openssl
+
+      - name: Configure
+        run: |
+          cmake -B build -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DBUILD_TESTS=ON \
+            -DOPENSSL_ROOT_DIR=$(brew --prefix openssl)
+
+      - name: Build
+        run: cmake --build build --parallel $(sysctl -n hw.ncpu)
+
+      - name: Test
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: cd build && ctest --output-on-failure
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vehicle-gateway-macos
+          path: build/vehicle_gateway
+          retention-days: 7
+
   build-ubuntu-24-clang:
     name: Build Ubuntu 24.04 (Clang)
     runs-on: ubuntu-24.04
