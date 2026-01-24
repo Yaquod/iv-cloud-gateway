@@ -28,7 +28,6 @@ set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "Build spdlog as a static library")
 set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "Use bundled fmt library")
 add_subdirectory(spdlog)
 
-# ============================================================================
 # yaml-cpp
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Do not build yaml-cpp tests")
 add_subdirectory(yaml-cpp)

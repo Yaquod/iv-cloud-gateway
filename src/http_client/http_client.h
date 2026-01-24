@@ -59,39 +59,48 @@ class HttpClient {
   HttpClient(HttpClient&&) noexcept;
   HttpClient& operator=(HttpClient&&) noexcept;
 
+  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Get(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {}) const;
 
+  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Post(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {},
       const std::string& body = "") const;
 
+  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Put(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {},
       const std::string& body = "") const;
 
+  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Patch(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {},
       const std::string& body = "") const;
 
+  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Delete(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {}) const;
 
+  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Head(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {}) const;
 
   // TODO: add other methods for ssl and https.
 
+  // cppcheck-suppress unusedFunction
   void set_timeout(std::chrono::seconds timeout) const;
 
+  // cppcheck-suppress unusedFunction
   void set_max_redirects(int max_redirects);
 
+  // cppcheck-suppress unusedFunction
   void set_follow_redirects(bool follow_redirects);
 
  private:
