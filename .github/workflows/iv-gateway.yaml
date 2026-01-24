@@ -59,6 +59,8 @@ jobs:
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
             protobuf-compiler-grpc protobuf-compiler \
+            libpaho-mqtt-dev \
+            libpaho-mqttpp-dev \
             ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
 
       - name: Configure
@@ -107,6 +109,8 @@ jobs:
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
             protobuf-compiler-grpc protobuf-compiler \
+            libpaho-mqtt-dev \
+            libpaho-mqttpp-dev \
             clang-15 clang++-15 \
             libc++-15-dev libc++abi-15-dev
 
@@ -153,7 +157,7 @@ jobs:
           dnf install -y \
             gcc-c++ cmake ninja-build \
             openssl-devel zlib-devel \
-            boost-devel \
+            boost-devel paho-mqtt-c-devel paho-mqtt-cpp-devel \
             grpc-devel grpc-plugins protobuf-devel
 
       - name: Configure
@@ -202,6 +206,8 @@ jobs:
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
             protobuf-compiler-grpc protobuf-compiler \
+            libpaho-mqtt-dev \
+            libpaho-mqttpp-dev \
             clang-15 clang++-15 \
             libc++-15-dev libc++abi-15-dev
 
@@ -242,6 +248,8 @@ jobs:
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
             protobuf-compiler-grpc protobuf-compiler \
+            libpaho-mqtt-dev \
+            libpaho-mqttpp-dev \
             clang-15 clang++-15 \
             libc++-15-dev libc++abi-15-dev
 
@@ -297,6 +305,8 @@ jobs:
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
             protobuf-compiler-grpc protobuf-compiler \
+            libpaho-mqtt-dev \
+            libpaho-mqttpp-dev \
             lcov gcovr
 
       - name: Configure
