@@ -20,7 +20,9 @@ target_link_libraries(vehicle_gateway_service_lib
         PUBLIC
         proto_lib
         gRPC::grpc++
+        async_mqtt5
         spdlog::spdlog
+        nlohmann_json::nlohmann_json
 )
 
 target_compile_options(vehicle_gateway_service_lib PRIVATE

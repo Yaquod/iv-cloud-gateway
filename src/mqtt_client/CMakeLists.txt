@@ -11,7 +11,6 @@ target_include_directories(mqtt_client_lib
 target_link_libraries(mqtt_client_lib
         PUBLIC
         async_mqtt5
-        Boost::system
         Boost::thread
         spdlog::spdlog
         OpenSSL::SSL

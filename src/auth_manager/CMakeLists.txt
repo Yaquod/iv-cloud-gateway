@@ -21,6 +21,7 @@ target_link_libraries(vehicle_gateway_auth_manager_lib
         proto_lib
         gRPC::grpc++
         spdlog::spdlog
+        nlohmann_json::nlohmann_json
 )
 
 target_compile_options(vehicle_gateway_service_lib PRIVATE

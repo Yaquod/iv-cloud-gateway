@@ -12,13 +12,11 @@
 #include "../constants.h"
 
 AuthManager::AuthManager(cloud_gateway::HttpClient *http_client)
-    : http_client(http_client)
-{
+    : http_client(http_client) {
   set_headers();
 }
 
-void AuthManager::admin_setup()
-{
+void AuthManager::admin_setup() {
   if (cred.admin_verified) {
     spdlog::info("admin already verified");
     return;

@@ -11,30 +11,20 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl-dev \
     zlib1g-dev \
-    libboost-system-dev \
-    libboost-thread-dev \
     libgrpc++-dev \
     libprotobuf-dev \
     protobuf-compiler-grpc \
     protobuf-compiler \
+    libboost-system-dev \
+    libboost-thread-dev \
+    libpaho-mqtt-dev \
+    libpaho-mqttpp-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Copy source code
 COPY . .
 
-# CRITICAL: Initialize git submodules (async-mqtt5, etc.)
-RUN git submodule update --init --recursive
-
-# Verify critical submodules are present
-RUN if [ ! -f "third_party/async-mqtt5/include/boost/mqtt5.hpp" ]; then \
-        echo "ERROR: async-mqtt5 submodule missing!"; \
-        exit 1; \
-    fi && \
-    echo "✓ Submodules verified"
-
-# Configure and build
+# Build the application
 RUN cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_TESTS=OFF \
@@ -42,40 +32,48 @@ RUN cmake -B build \
     -GNinja && \
     cmake --build build --parallel $(nproc)
 
-# Verify the binary was built
-RUN if [ ! -f "build/vehicle_gateway" ]; then \
-        echo "ERROR: Build failed - vehicle_gateway not found!"; \
-        exit 1; \
-    fi
+# This stage uses the builder environment to run tests.
+FROM builder AS test
 
-# Runtime stage
+WORKDIR /app
+
+# Re-configure CMake with tests enabled
+RUN cmake -B build \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DBUILD_TESTS=ON \
+    -GNinja && \
+    cmake --build build --parallel $(nproc) && \
+    ctest --test-dir build --output-on-failure
+
 FROM arm64v8/ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
-    libssl3t64 \
+    libssl3 \
     zlib1g \
     libgrpc++1.51 \
     libprotobuf32t64 \
     libboost-system1.83.0 \
     libboost-thread1.83.0 \
+    libpaho-mqtt1.3 \
+    libpaho-mqttpp3-1 \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/build/vehicle_gateway /usr/local/bin/vehicle_gateway
-COPY --from=builder /app/config /app/config
 
 RUN useradd -r -s /bin/false gateway && \
-    mkdir -p /app/logs && \
+    mkdir -p /app/config /app/logs && \
     chown -R gateway:gateway /app
 
 WORKDIR /app
 
 USER gateway
 
-EXPOSE 8080 50051
+EXPOSE 8080 1883 8883
 
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD ["/usr/local/bin/vehicle_gateway", "--health-check"] || exit 1
 
 ENTRYPOINT ["/usr/local/bin/vehicle_gateway"]
-CMD ["--config", "/app/config/gateway.yaml"]
+CMD ["--help"]
