@@ -1,34 +1,24 @@
 syntax = "proto3";
 
+
 package vehicle_gateway;
 
 service VehicleGateway {
 
-  rpc VechileLogin(LoginRequest)returns (LoginRespose);   /*topic/trip/init*/
-  rpc SendEta(EtaRequest) returns (EtaResponse);  /*topic/trip/eta*/
-  rpc SendStatus(StatusRequest) returns (StatusResponse);    /*topic/trip/status*/
+
+  rpc SendEta(EtaRequest) returns (EtaResponse);
+  rpc SendStatus(StatusRequest) returns (StatusResponse);
   rpc SendArrive(ArriveRequest)returns (ArriveResponse);
-
-
-}
-
-  message LoginRequest
-  {
-    string vin_number = 1;
-    string trip_id = 2;
-  }
-
-message LoginRespose
-{
-   bool success = 1;
-  string message = 2;
+  rpc UpdateVehicleLocation(UpdateVehicleLocationRequest) returns (UpdateVehicleLocationResponse);
 
 }
+
+
 
 message EtaRequest
 {
   string vin_number = 1;
-  string trip_id = 2;
+  int64 request_id = 2;
   double time = 3;
   double fare = 4;
 }
@@ -45,7 +35,7 @@ message EtaResponse
 message StatusRequest
 {
   string vin_number = 1;
-  string trip_id = 2;
+  int64 trip_id = 2;
   string status = 3;
 }
 
@@ -56,7 +46,7 @@ message StatusResponse {
 
 message ArriveRequest{
   string vin_number = 1;
-  string trip_id = 2;
+  int64 trip_id = 2;
   double long = 3;
   double lat = 4;
 }
@@ -64,4 +54,20 @@ message ArriveRequest{
 message ArriveResponse{
   bool success = 1;
   string message = 2;
+}
+
+
+
+
+message UpdateVehicleLocationRequest
+{
+ string vinNumber = 1;
+ double longitude = 2;
+ double latitude = 3;
+}
+
+message UpdateVehicleLocationResponse
+{
+bool success = 1;
+ string message = 2;
 }
