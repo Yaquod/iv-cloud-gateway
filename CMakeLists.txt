@@ -1,11 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 if(POLICY CMP0167)
-    cmake_policy(SET CMP0167 NEW)
-endif()
-
-if(POLICY CMP0144)
-    cmake_policy(SET CMP0144 NEW)
+    cmake_policy(SET CMP0167 OLD)
 endif()
 
 project(VehicleCloudGateway VERSION 1.0.0 LANGUAGES CXX C)
@@ -28,12 +24,16 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerWarnings.cmake")
     include(CompilerWarnings)
 endif()
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/SubmoduleHelpers.cmake")
+    include(SubmoduleHelpers)
+endif()
+
 if(ENABLE_SANITIZERS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Sanitizers.cmake")
     include(Sanitizers)
     enable_sanitizers()
 endif()
 
-# On macOS
+# On macOS, we need to hint to CMake where to find libraries installed via Homebrew.
 if(APPLE)
     if(DEFINED ENV{HOMEBREW_PREFIX})
         set(HOMEBREW_PREFIX "$ENV{HOMEBREW_PREFIX}")
@@ -43,6 +43,7 @@ if(APPLE)
         set(HOMEBREW_PREFIX "/usr/local") # Intel
     endif()
 
+    # If Homebrew is found, add its paths to CMake's search prefixes.
     if(HOMEBREW_PREFIX AND IS_DIRECTORY "${HOMEBREW_PREFIX}")
         list(APPEND CMAKE_PREFIX_PATH "${HOMEBREW_PREFIX}")
         set(ENV{PKG_CONFIG_PATH} "${HOMEBREW_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
@@ -51,70 +52,91 @@ endif()
 
 message(STATUS "Finding system dependencies...")
 
+# Threading
 find_package(Threads REQUIRED)
+
+# OpenSSL and zlib
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
-find_package(Boost 1.74.0 QUIET CONFIG COMPONENTS system thread)
+if(APPLE)
+    set(Boost_NO_BOOST_CMAKE ON)
+    set(Boost_NO_WARN ON)
+endif()
+find_package(Boost 1.74.0 QUIET COMPONENTS thread)
+
+if(NOT Boost_FOUND AND APPLE AND HOMEBREW_PREFIX)
+    message(STATUS "Boost not found via find_package. Attempting manual discovery on macOS.")
+    set(Boost_NO_BOOST_LIBS ON)
+
+    find_path(Boost_INCLUDE_DIR NAMES boost/version.hpp PATHS "${HOMEBREW_PREFIX}/include")
+    find_library(Boost_THREAD_LIBRARY NAMES boost_thread PATHS "${HOMEBREW_PREFIX}/lib")
+
+    include(FindPackageHandleStandardArgs)
+    find_package_handle_standard_args(Boost
+        REQUIRED_VARS Boost_INCLUDE_DIR Boost_THREAD_LIBRARY
+        VERSION_VAR Boost_VERSION)
+
+    if(Boost_FOUND)
+        set(Boost_LIBRARIES ${Boost_THREAD_LIBRARY})
+        set(Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIR})
+        add_library(Boost::thread UNKNOWN IMPORTED)
+        set_target_properties(Boost::thread PROPERTIES
+            IMPORTED_LOCATION "${Boost_THREAD_LIBRARY}")
+    endif()
+endif()
+
 if(NOT Boost_FOUND)
-    message(STATUS "Boost config discovery failed, falling back to FindBoost.cmake module.")
-    find_package(Boost 1.74.0 REQUIRED COMPONENTS system thread)
+    message(FATAL_ERROR "Could not find Boost library. Please ensure it is installed correctly.")
 endif()
 
-if(Boost_FOUND)
-    if(NOT TARGET Boost::system)
-        message(STATUS "Creating Boost::system alias for compatibility.")
-        add_library(Boost::system INTERFACE IMPORTED)
-        target_link_libraries(Boost::system INTERFACE ${Boost_SYSTEM_LIBRARIES})
-    endif()
-    if(NOT TARGET Boost::thread)
-        message(STATUS "Creating Boost::thread alias for compatibility.")
-        add_library(Boost::thread INTERFACE IMPORTED)
-        target_link_libraries(Boost::thread INTERFACE ${Boost_THREAD_LIBRARIES})
-    endif()
-endif()
+find_package(gRPC REQUIRED)
 
-
-find_package(Protobuf CONFIG QUIET)
-if(NOT Protobuf_FOUND)
-    message(STATUS "Protobuf CMake config not found, falling back to PkgConfig.")
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(Protobuf REQUIRED IMPORTED_TARGET protobuf)
-    if(NOT Protobuf_FOUND)
-        message(FATAL_ERROR "Could not find Protobuf using either CMake config or pkg-config.")
-    endif()
-endif()
-
-
-find_package(gRPC CONFIG QUIET)
-if(NOT gRPC_FOUND)
-    message(STATUS "gRPC config not found, falling back to PkgConfig to find grpc++.")
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(PC_GRPC REQUIRED IMPORTED_TARGET grpc++)
-    
-    if(TARGET PkgConfig::PC_GRPC)
-        message(STATUS "Found gRPC via pkg-config.")
-        # Create an alias for the target found by pkg-config for consistency.
-        add_library(gRPC::grpc++ ALIAS PkgConfig::PC_GRPC)
-    else()
-        message(FATAL_ERROR "Could not find gRPC using either CMake config or pkg-config. Please try: brew reinstall grpc")
-    endif()
-else()
-    message(STATUS "Found gRPC via CMake config.")
+if(NOT TARGET protobuf::libprotobuf AND Protobuf_LIBRARIES)
+    message(STATUS "Protobuf target 'protobuf::libprotobuf' not found. Creating ALIAS.")
+    add_library(protobuf::libprotobuf ALIAS ${Protobuf_LIBRARIES})
 endif()
 
 if(NOT TARGET gRPC::grpc_cpp_plugin)
     message(FATAL_ERROR "gRPC C++ plugin target (gRPC::grpc_cpp_plugin) not found. Check your gRPC installation.")
 endif()
 
+# --- Paho MQTT Dependency Handling ---
+# Create an interface library to represent the Paho MQTT dependency.
+add_library(vgw_paho_mqtt_iface INTERFACE)
+
+# First, try to find Paho MQTT on the system using pkg-config. This is ideal for CI.
+find_package(PkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    pkg_check_modules(PC_PAHO_MQTT_C QUIET paho-mqtt3as)
+    pkg_check_modules(PC_PAHO_MQTT_CPP QUIET paho-mqttpp3)
+endif()
+
+# If both system libraries were found, link them to our interface target.
+if(PC_PAHO_MQTT_C_FOUND AND PC_PAHO_MQTT_CPP_FOUND)
+    message(STATUS "Found Paho MQTT via pkg-config, will use system libraries.")
+    target_link_libraries(vgw_paho_mqtt_iface INTERFACE PkgConfig::PC_PAHO_MQTT_CPP)
+else()
+    # Otherwise, set an option to build them from the third_party submodule.
+    message(STATUS "Paho MQTT not found on system. Falling back to build from source.")
+    set(VGW_BUILD_PAHO_FROM_SOURCE ON CACHE INTERNAL "Build Paho MQTT from submodule source")
+endif()
+
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)
 
+# If we built Paho from source, we must link it to our interface library *after*
+if(VGW_BUILD_PAHO_FROM_SOURCE)
+    target_link_libraries(vgw_paho_mqtt_iface INTERFACE
+        $<TARGET_FILE:paho-mqttpp3-static>)
+endif()
+
 add_subdirectory(proto)
+
 add_subdirectory(src)
 
 add_executable(vehicle_gateway src/main.cpp)
-target_link_libraries(vehicle_gateway PRIVATE gateway_lib)
+target_link_libraries(vehicle_gateway PRIVATE gateway_lib vgw_paho_mqtt_iface)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_command(TARGET vehicle_gateway POST_BUILD
@@ -123,16 +145,23 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     )
 endif()
 
+# Tests
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
 
-install(TARGETS vehicle_gateway RUNTIME DESTINATION bin)
-install(DIRECTORY config/ DESTINATION /etc/vehicle-gateway FILES_MATCHING PATTERN "*.yaml")
+install(TARGETS vehicle_gateway
+        RUNTIME DESTINATION bin)
 
+install(DIRECTORY config/
+        DESTINATION /etc/vehicle-gateway
+        FILES_MATCHING PATTERN "*.yaml")
+
+# Install systemd service file only on Linux.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/systemd/vehicle-gateway.service")
-    install(FILES systemd/vehicle-gateway.service DESTINATION /lib/systemd/system)
+    install(FILES systemd/vehicle-gateway.service
+            DESTINATION /lib/systemd/system)
 endif()
 
 message(STATUS "==========================================")
@@ -144,14 +173,18 @@ message(STATUS "C++ Standard:      ${CMAKE_CXX_STANDARD}")
 message(STATUS "")
 message(STATUS "System Dependencies:")
 message(STATUS "  Protobuf:        ${Protobuf_VERSION}")
+message(STATUS "  gRPC:            ${gRPC_VERSION}")
 message(STATUS "  OpenSSL:         ${OPENSSL_VERSION}")
 message(STATUS "  Boost:           ${Boost_VERSION}")
 message(STATUS "")
 message(STATUS "Third-Party (built from source):")
-message(STATUS "  async_mqtt5 (MQTT5 client)")
 message(STATUS "  nlohmann/json")
 message(STATUS "  spdlog")
 message(STATUS "  yaml-cpp")
+if(VGW_BUILD_PAHO_FROM_SOURCE)
+    message(STATUS "  paho-mqtt-c (from source)")
+    message(STATUS "  paho-mqtt-cpp (from source)")
+endif()
 if(BUILD_TESTS)
     message(STATUS "  GoogleTest")
 endif()
