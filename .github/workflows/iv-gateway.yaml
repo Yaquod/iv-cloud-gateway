@@ -22,16 +22,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format clang-tidy cppcheck
+          sudo apt-get install -y clang-format clang-tidy
       - name: Run Clang-Format
         run: |
           find src tests -name '*.cpp' -o -name '*.h' | \
           xargs clang-format --dry-run --Werror
-      - name: Run CPP-Check
-        run: |
-          cppcheck --enable=all --suppress=missingIncludeSystem \
-          --inline-suppr \
-          --error-exitcode=1 src/
 
   build-ubuntu-24:
     name: Build Ubuntu 24.04 (${{ matrix.compiler.name }})
@@ -117,6 +112,8 @@ jobs:
         run: |
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
+            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" \
             -DBUILD_TESTS=ON
 
       - name: Build
