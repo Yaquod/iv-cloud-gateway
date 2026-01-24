@@ -1,74 +1,259 @@
-//
-// Created by alaa-hassan on 19‏/11‏/2025.
-//
+
 #include "vehicle_gateway_service.h"
 
+#include <nlohmann/json.hpp>
 
-VehicleGatewayServiceImp::VehicleGatewayServiceImp(MqttClient* mqtt,HttpClient* http)
- : mqttClient(mqtt),httpClient(http){
+#include "../constants.h"
 
-}
+VehicleGatewayServiceImp::VehicleGatewayServiceImp(MqttClient* mqtt,
+                                                   HttpClient* http)
+    : mqttClient(mqtt), httpClient(http) {}
 
 VehicleGatewayServiceImp::~VehicleGatewayServiceImp() = default;
 
-Status VehicleGatewayServiceImp::VechileLogin(ServerContext *context, const vehicle_gateway::LoginRequest *request,
-                                              vehicle_gateway::LoginRespose *response) {
- std::lock_guard<std::mutex> lock(this->mutex_);
+void VehicleGatewayServiceImp::Run(grpc::ServerCompletionQueue* cq) {
+  new EtaCallData(&async_service_, cq, mqttClient);
+  new StatusCallData(&async_service_, cq, mqttClient);
+  new ArriveCallData(&async_service_, cq, mqttClient);
+  new UpdateVehicleLocationCallData(&async_service_, cq, mqttClient);
 
- std::string url = "/api/vechile/login";
- std::string payload = request->DebugString();
+  void* tag;
+  bool ok;
 
- auto httpResponse = httpClient->Post(url, {}, payload);
- if (!httpResponse.success) {
-  response->set_success(false);
-  response->set_message("HTTP login failed: " + httpResponse.error_message);
-  return Status(grpc::StatusCode::INTERNAL, "HTTP login failed");
- }
+  while (true) {
+    if (!cq->Next(&tag, &ok)) {
+      spdlog::info("Completion queue shutting down");
+      break;
+    }
 
- response->set_success(true);
- response->set_message("login ok");
- return Status::OK;
+    if (ok) {
+      static_cast<CallData*>(tag)->Proceed();
+    } else {
+      spdlog::warn("Call was cancelled");
+      delete static_cast<CallData*>(tag);
+    }
+  }
 }
 
-Status VehicleGatewayServiceImp::SendEta(ServerContext* context, const vehicle_gateway::EtaRequest* request, vehicle_gateway::EtaResponse* response) {
-      std::lock_guard<std::mutex> lock(this->mutex_);
-      std::string topic = "topic/trip/eta";
-      mqttClient->mqtt_publish(topic, request->DebugString());
+void VehicleGatewayServiceImp::Shutdown() { shutdown_requested = true; }
 
-
- response->set_success(true);
- response->set_message("Successfully published eta");
- return Status::OK;
-
+VehicleGatewayServiceImp::UpdateVehicleLocationCallData::
+    UpdateVehicleLocationCallData(
+        vehicle_gateway::VehicleGateway::AsyncService* service,
+        grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client)
+    : service_(service),
+      cq_(cq),
+      responder_(&ctx_),
+      status_(CREATE),
+      mqtt_client_(mqtt_client) {
+  Proceed();
 }
 
+void VehicleGatewayServiceImp::UpdateVehicleLocationCallData::Proceed() {
+  if (status_ == CREATE) {
+    status_ = PROCESS;
+    service_->RequestUpdateVehicleLocation(&ctx_, &request_, &responder_, cq_,
+                                           cq_, this);
 
-Status VehicleGatewayServiceImp::SendStatus(ServerContext* context, const vehicle_gateway::StatusRequest* request, vehicle_gateway::StatusResponse* response) {
- std::lock_guard<std::mutex> lock(this->mutex_);
- std::string topic = "topic/trip/status";
- mqttClient->mqtt_publish(topic, request->DebugString());
+  } else if (status_ == PROCESS) {
+    new UpdateVehicleLocationCallData(service_, cq_, mqtt_client_);
 
- response->set_success(true);
- response->set_message("Successfully published status");
- return Status::OK;
+    // modify topic
+    std::string topic = VehicleGatewayConstants::UpdateVehicleLocation;
+    status_ = WAIT_MQTT;
 
+    nlohmann::json body;
+
+    body["vinNumber"] = request_.vinnumber();
+    body["longitude"] = request_.longitude();
+    body["latitude"] = request_.latitude();
+
+    std::string payload = body.dump();
+
+    mqtt_client_->mqtt_publish(
+        topic, payload, [this](bool success, std::string message) {
+          if (!success) {
+            response_.set_success(false);
+            response_.set_message("update vehicle location failed" + message);
+            status_ = FINISH;
+            responder_.Finish(response_,
+                              Status(grpc::StatusCode::INTERNAL,
+                                     "update vehicle location failed"),
+                              this);
+          } else {
+            response_.set_success(true);
+            response_.set_message("successfully updated location");
+            status_ = FINISH;
+            responder_.Finish(response_, Status::OK, this);
+          }
+        });
+
+  } else if (status_ == WAIT_MQTT) {
+    status_ = FINISH;
+
+  } else {
+    delete this;
+  }
 }
 
-
-
-
-Status VehicleGatewayServiceImp::SendArrive(ServerContext* context, const vehicle_gateway::ArriveRequest* request, vehicle_gateway::ArriveResponse* response) {
- std::lock_guard<std::mutex> lock(this->mutex_);
- std::string topic = "topic/trip/arrive";
- mqttClient->mqtt_publish(topic, request->DebugString());
-
- response->set_success(true);
- response->set_message("Successfully published arrive");
- return Status::OK;
-
+VehicleGatewayServiceImp::EtaCallData::EtaCallData(
+    vehicle_gateway::VehicleGateway::AsyncService* service,
+    grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client)
+    : service_(service),
+      cq_(cq),
+      responder_(&ctx_),
+      status_(CREATE),
+      mqtt_client_(mqtt_client) {
+  Proceed();
 }
 
+void VehicleGatewayServiceImp::EtaCallData::Proceed() {
+  if (status_ == CREATE) {
+    status_ = PROCESS;
+    service_->RequestSendEta(&ctx_, &request_, &responder_, cq_, cq_, this);
 
+  } else if (status_ == PROCESS) {
+    new EtaCallData(service_, cq_, mqtt_client_);
 
+    std::string topic = VehicleGatewayConstants::TripEta;
+    status_ = WAIT_MQTT;
 
+    nlohmann::json body;
 
+    body["vinNumber"] = request_.vin_number();
+    body["requestId"] = request_.request_id();
+    body["estimatedFare"] = request_.fare();
+    body["estimatedTime"] = request_.time();
+
+    std::string payload = body.dump();
+
+    mqtt_client_->mqtt_publish(
+        topic, payload, [this](bool success, std::string message) {
+          if (!success) {
+            response_.set_success(false);
+            response_.set_message("mqtt publish Eta failed: " + message);
+            status_ = FINISH;
+            responder_.Finish(
+                response_,
+                Status(grpc::StatusCode::INTERNAL, "Mqtt publish Eta failed"),
+                this);
+          } else {
+            response_.set_success(true);
+            response_.set_message("successfully published Eta");
+            status_ = FINISH;
+            responder_.Finish(response_, Status::OK, this);
+          }
+        });
+
+  } else if (status_ == WAIT_MQTT) {
+    status_ = FINISH;
+
+  } else {
+    delete this;
+  }
+}
+
+VehicleGatewayServiceImp::StatusCallData::StatusCallData(
+    vehicle_gateway::VehicleGateway::AsyncService* service,
+    grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client)
+    : service_(service),
+      cq_(cq),
+      responder_(&ctx_),
+      status_(CREATE),
+      mqtt_client_(mqtt_client) {
+  Proceed();
+}
+
+void VehicleGatewayServiceImp::StatusCallData::Proceed() {
+  if (status_ == CREATE) {
+    status_ = PROCESS;
+    service_->RequestSendStatus(&ctx_, &request_, &responder_, cq_, cq_, this);
+
+  } else if (status_ == PROCESS) {
+    new StatusCallData(service_, cq_, mqtt_client_);
+
+    std::string topic = VehicleGatewayConstants::TripStatus;
+    status_ = WAIT_MQTT;
+
+    nlohmann::json body;
+
+    body["vinNumber"] = request_.vin_number();
+    body["trip_id"] = request_.trip_id();
+    body["status"] = request_.status();
+
+    std::string payload = body.dump();
+
+    mqtt_client_->mqtt_publish(
+        topic, payload, [this](bool success, std::string message) {
+          if (!success) {
+            response_.set_success(false);
+            response_.set_message("mqtt publish Status failed: " + message);
+            status_ = FINISH;
+            responder_.Finish(response_,
+                              Status(grpc::StatusCode::INTERNAL,
+                                     "Mqtt publish Status failed"),
+                              this);
+          } else {
+            response_.set_success(true);
+            response_.set_message("successfully published status");
+            status_ = FINISH;
+            responder_.Finish(response_, Status::OK, this);
+          }
+        });
+
+  } else if (status_ == WAIT_MQTT) {
+    status_ = FINISH;
+
+  } else {
+    delete this;
+  }
+}
+
+VehicleGatewayServiceImp::ArriveCallData::ArriveCallData(
+    vehicle_gateway::VehicleGateway::AsyncService* service,
+    grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client)
+    : service_(service),
+      cq_(cq),
+      responder_(&ctx_),
+      status_(CREATE),
+      mqtt_client_(mqtt_client) {
+  Proceed();
+}
+
+void VehicleGatewayServiceImp::ArriveCallData::Proceed() {
+  if (status_ == CREATE) {
+    status_ = PROCESS;
+    service_->RequestSendArrive(&ctx_, &request_, &responder_, cq_, cq_, this);
+
+  } else if (status_ == PROCESS) {
+    new ArriveCallData(service_, cq_, mqtt_client_);
+
+    std::string topic = VehicleGatewayConstants::TripArrive;
+    status_ = WAIT_MQTT;
+
+    mqtt_client_->mqtt_publish(
+        topic, request_.DebugString(),
+        [this](bool success, std::string message) {
+          if (!success) {
+            response_.set_success(false);
+            response_.set_message("mqtt publish Arrive failed: " + message);
+            status_ = FINISH;
+            responder_.Finish(response_,
+                              Status(grpc::StatusCode::INTERNAL,
+                                     "Mqtt publish Arrive failed"),
+                              this);
+          } else {
+            response_.set_success(true);
+            response_.set_message("successfully published Arrive");
+            status_ = FINISH;
+            responder_.Finish(response_, Status::OK, this);
+          }
+        });
+
+  } else if (status_ == WAIT_MQTT) {
+    status_ = FINISH;
+
+  } else {
+    delete this;
+  }
+}

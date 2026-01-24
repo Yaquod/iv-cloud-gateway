@@ -32,17 +32,5 @@ add_subdirectory(spdlog)
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Do not build yaml-cpp tests")
 add_subdirectory(yaml-cpp)
 
-if(VGW_BUILD_PAHO_FROM_SOURCE)
-    # Paho MQTT C Library
-    set(PAHO_INSTALL_LIBRARIES OFF CACHE BOOL "Do not install Paho C libraries") # For paho.mqtt.c
-    set(PAHO_WITH_SSL ON CACHE BOOL "Enable SSL for Paho C")
-    set(PAHO_BUILD_STATIC ON CACHE BOOL "Build Paho C as a static library")
-    set(PAHO_BUILD_SAMPLES OFF CACHE BOOL "Do not build Paho C samples")
-    add_subdirectory(paho.mqtt.c)
-
-    # Paho MQTT C++ Library
-    vgw_add_subdirectory_no_install(paho.mqtt.cpp)
-endif()
-
 # GoogleTest (for unit tests)
 add_subdirectory(googletest)

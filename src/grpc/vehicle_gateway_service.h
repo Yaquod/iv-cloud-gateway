@@ -1,42 +1,143 @@
-//
-// Created by alaa-hassan on 19‏/11‏/2025.
-//
-
 #ifndef VEHICLE_GATEWAY_SERVICE_H
 #define VEHICLE_GATEWAY_SERVICE_H
 
-
-#include <grpcpp/server.h>
-#include <grpcpp/server_context.h>
-#include "vehicle_gateway.grpc.pb.h"
-#include "http_client/http_client.h"
-#include "mqtt_client/mqtt_client.h"
-#include <mutex>
+#include <grpcpp/grpcpp.h>
 #include <spdlog/spdlog.h>
 
-using grpc::Status;
-using grpc::ServerContext;
-using cloud_gateway::MqttClient;
+#include <memory>
+#include <mutex>
+#include <thread>
+
+#include "../../build/proto/vehicle_gateway.grpc.pb.h"
+#include "http_client/http_client.h"
+#include "mqtt_client/mqtt_client.h"
+
 using cloud_gateway::HttpClient;
+using cloud_gateway::MqttClient;
+using grpc::ServerContext;
+using grpc::Status;
 
-class VehicleGatewayServiceImp final :public vehicle_gateway::VehicleGateway::Service {
-public:
-    VehicleGatewayServiceImp (MqttClient* mqtt , HttpClient* http);
-    ~VehicleGatewayServiceImp () ;
-    Status VechileLogin(ServerContext* context, const vehicle_gateway::LoginRequest* request, vehicle_gateway::LoginRespose* response)override;
-    Status SendEta(ServerContext* context, const vehicle_gateway::EtaRequest* request, vehicle_gateway::EtaResponse* response)override;
-    Status SendStatus(ServerContext* context, const vehicle_gateway::StatusRequest* request, vehicle_gateway::StatusResponse* response)override;
-    Status SendArrive(ServerContext* context, const vehicle_gateway::ArriveRequest* request, vehicle_gateway::ArriveResponse* response)override;
+class VehicleGatewayServiceImp {
+ public:
+  VehicleGatewayServiceImp(MqttClient* mqtt, HttpClient* http);
+  ~VehicleGatewayServiceImp();
 
+  void Run(grpc::ServerCompletionQueue* cq);
+  void Shutdown();
 
+  vehicle_gateway::VehicleGateway::AsyncService* GetAsyncService() {
+    return &async_service_;
+  }
 
+  void SetAuthToken(const std::string& token) {
+    std::lock_guard<std::mutex> lock(token_mutex);
+    auth_token = token;
+  }
 
-private:
-    std::mutex mutex_;
-    MqttClient* mqttClient;
-    HttpClient* httpClient;
+  std::string GetAuthToken() {
+    std::lock_guard<std::mutex> lock(token_mutex);
+    return auth_token;
+  }
 
+ private:
+  std::mutex mutex_;
+  MqttClient* mqttClient;
+  HttpClient* httpClient;
 
+  bool shutdown_requested = false;
+  std::string auth_token;
+  std::mutex token_mutex;
+  vehicle_gateway::VehicleGateway::AsyncService async_service_;
 
+  // Base class for all async call data
+  class CallData {
+   public:
+    virtual void Proceed() = 0;
+    virtual ~CallData() = default;
+  };
+
+  class UpdateVehicleLocationCallData : public CallData {
+   public:
+    UpdateVehicleLocationCallData(
+        vehicle_gateway::VehicleGateway::AsyncService* service,
+        grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
+
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
+
+    vehicle_gateway::UpdateVehicleLocationRequest request_;
+    vehicle_gateway::UpdateVehicleLocationResponse response_;
+    grpc::ServerAsyncResponseWriter<
+        vehicle_gateway::UpdateVehicleLocationResponse>
+        responder_;
+
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
+
+  class EtaCallData : public CallData {
+   public:
+    EtaCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
+                grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
+
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
+
+    vehicle_gateway::EtaRequest request_;
+    vehicle_gateway::EtaResponse response_;
+    grpc::ServerAsyncResponseWriter<vehicle_gateway::EtaResponse> responder_;
+
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
+
+  class StatusCallData : public CallData {
+   public:
+    StatusCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
+                   grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
+
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
+
+    vehicle_gateway::StatusRequest request_;
+    vehicle_gateway::StatusResponse response_;
+    grpc::ServerAsyncResponseWriter<vehicle_gateway::StatusResponse> responder_;
+
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
+
+  class ArriveCallData : public CallData {
+   public:
+    ArriveCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
+                   grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
+
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
+
+    vehicle_gateway::ArriveRequest request_;
+    vehicle_gateway::ArriveResponse response_;
+    grpc::ServerAsyncResponseWriter<vehicle_gateway::ArriveResponse> responder_;
+
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
 };
+
 #endif
