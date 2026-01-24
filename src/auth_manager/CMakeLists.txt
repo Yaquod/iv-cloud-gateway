@@ -5,7 +5,6 @@ add_library(vehicle_gateway_auth_manager_lib OBJECT
 
 )
 
-# Include paths for generated gRPC files
 target_include_directories(vehicle_gateway_auth_manager_lib
         PUBLIC
         ${CMAKE_SOURCE_DIR}/src
