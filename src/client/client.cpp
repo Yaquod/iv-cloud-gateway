@@ -3,6 +3,7 @@
 //
 
 #include "client.h"
+
 #include "vehicle_gateway.pb.h"
 
 VechileGatewayClient::VechileGatewayClient(const std::string &server_add) {
