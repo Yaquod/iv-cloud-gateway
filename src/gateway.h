@@ -18,7 +18,6 @@ namespace cloud_gateway {
 class Gateway {
  public:
   Gateway();
-  ~Gateway();
 
   void initialize();
   void run();
