@@ -16,3 +16,6 @@
 [submodule "third_party/paho.mqtt.cpp"]
 	path = third_party/paho.mqtt.cpp
 	url = https://github.com/eclipse/paho.mqtt.cpp.git
+[submodule "third_party/async-mqtt5"]
+	path = third_party/async-mqtt5
+	url = https://github.com/mireo/async-mqtt5.git
