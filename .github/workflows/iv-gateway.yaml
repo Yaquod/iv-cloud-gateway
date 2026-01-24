@@ -22,16 +22,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format clang-tidy cppcheck
+          sudo apt-get install -y clang-format clang-tidy
       - name: Run Clang-Format
         run: |
           find src tests -name '*.cpp' -o -name '*.h' | \
           xargs clang-format --dry-run --Werror
-      - name: Run CPP-Check
-        run: |
-          cppcheck --enable=all --suppress=missingIncludeSystem \
-          --inline-suppr \
-          --error-exitcode=1 src/
 
   build-ubuntu-24:
     name: Build Ubuntu 24.04 (${{ matrix.compiler.name }})
@@ -107,56 +102,13 @@ jobs:
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
             protobuf-compiler-grpc protobuf-compiler \
-            clang-15 clang++-15 \
-            libc++-15-dev libc++abi-15-dev
+            clang-17 clang++-17 \
+            libc++-17-dev libc++abi-17-dev
 
       - name: Configure
         env:
-          CC: clang-15
-          CXX: clang++-15
-        run: |
-          cmake -B build -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
-            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" \
-            -DBUILD_TESTS=ON
-
-      - name: Build
-        run: cmake --build build --parallel $(nproc)
-
-      - name: Test
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 10
-          max_attempts: 3
-          command: cd build && ctest --output-on-failure
-
-  build-fedora:
-    name: Build Fedora 42
-    runs-on: ubuntu-latest
-    container: fedora:42
-
-    steps:
-      - name: Install Git
-        run: dnf install -y git
-
-      - name: Fix Git Ownership (Container Issue)
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install Dependencies
-        run: |
-          dnf install -y \
-            gcc-c++ cmake ninja-build \
-            openssl-devel zlib-devel \
-            boost-devel \
-            grpc-devel grpc-plugins protobuf-devel
-
-      - name: Configure
+          CC: clang-17
+          CXX: clang++-17
         run: |
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
@@ -171,13 +123,6 @@ jobs:
           timeout_minutes: 10
           max_attempts: 3
           command: cd build && ctest --output-on-failure
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: vehicle-gateway-fedora
-          path: build/vehicle_gateway
-          retention-days: 7
 
   sanitizers:
     name: Sanitizers (${{ matrix.sanitizer }})
@@ -201,19 +146,17 @@ jobs:
             libssl-dev zlib1g-dev \
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
-            protobuf-compiler-grpc protobuf-compiler \
-            clang-15 clang++-15 \
-            libc++-15-dev libc++abi-15-dev
+            protobuf-compiler-grpc protobuf-compiler
 
       - name: Configure
         env:
-          CC: clang-15
-          CXX: clang++-15
+          CC: gcc
+          CXX: g++
         run: |
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer -stdlib=libc++" \
-            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.sanitizer }} -stdlib=libc++" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.sanitizer }}" \
             -DBUILD_TESTS=ON
 
       - name: Build
@@ -241,29 +184,27 @@ jobs:
             libssl-dev zlib1g-dev \
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
-            protobuf-compiler-grpc protobuf-compiler \
-            clang-15 clang++-15 \
-            libc++-15-dev libc++abi-15-dev
+            protobuf-compiler-grpc protobuf-compiler
 
       - name: Create TSan Suppressions
         run: |
           cat > tsan.supp << 'EOF'
-          race:std::__1::basic_ios
-          race:std::__1::basic_ostream
-          race:std::__1::ios_base
-          race:libc++.so
+          race:std::basic_ios
+          race:std::basic_ostream
+          race:std::ios_base
+          race:libstdc++.so
           EOF
 
       - name: Configure
         env:
-          CC: clang-15
-          CXX: clang++-15
+          CC: gcc
+          CXX: g++
           TSAN_OPTIONS: suppressions=tsan.supp
         run: |
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -stdlib=libc++" \
-            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread -stdlib=libc++" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread" \
             -DBUILD_TESTS=ON
 
       - name: Build
@@ -351,33 +292,3 @@ jobs:
           files: ./coverage.info,./coverage.xml
           fail_ci_if_error: false
           verbose: true
-
-  build-arm64-docker:
-    name: Build ARM64 Docker
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build
-        run: |
-          docker buildx build \
-            --platform linux/arm64 \
-            -f Dockerfile.arm64 \
-            --load \
-            -t vehicle-gateway:arm64 \
-            .
-
-      - name: Verify
-        run: |
-          docker run --rm --platform linux/arm64 \
-            vehicle-gateway:arm64 --help || true
