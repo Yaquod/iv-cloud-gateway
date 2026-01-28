@@ -4,14 +4,15 @@ syntax = "proto3";
 package vehicle_gateway;
 
 service VehicleGateway {
+
+
+  rpc SendEta(EtaRequest) returns (EtaResponse);
+  rpc SendStatus(StatusRequest) returns (StatusResponse);
+  rpc SendArrive(ArriveRequest)returns (ArriveResponse);
   rpc UpdateVehicleLocation(UpdateVehicleLocationRequest) returns (UpdateVehicleLocationResponse);
-  rpc TripEta(EtaRequest) returns (EtaResponse);
-  rpc TripStatus(StatusRequest) returns (StatusResponse);
-  rpc TripArrive(ArriveRequest) returns (ArriveResponse);
   rpc TripInit(TripInitRequest) returns (TripInitResponse);
   rpc TripMove(TripMoveRequest) returns (TripMoveResponse);
 }
-
 
 
 
@@ -61,16 +62,17 @@ message ArriveResponse{
 
 message UpdateVehicleLocationRequest
 {
- string vinNumber = 1;
- double longitude = 2;
- double latitude = 3;
+  string vinNumber = 1;
+  double longitude = 2;
+  double latitude = 3;
 }
 
 message UpdateVehicleLocationResponse
 {
-bool success = 1;
- string message = 2;
+  bool success = 1;
+  string message = 2;
 }
+
 
 message TripInitRequest {
   string vin_number = 1;

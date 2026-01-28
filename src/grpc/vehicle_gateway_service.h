@@ -138,15 +138,6 @@ class VehicleGatewayServiceImp {
     enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
     CallStatus status_;
   };
-  /*
-   *
-  TripInit
-topic/trip/init
-Not implemented
-TripMove
-topic/trip/move
-Not implemented
-   */
   class TripInitCallData : public CallData {
    public:
     TripInitCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
@@ -168,28 +159,26 @@ Not implemented
     CallStatus status_;
   };
 
-class TripMoveCallData : public CallData {
- public:
-  TripMoveCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
-                   grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
-  void Proceed() override;
+  class TripMoveCallData : public CallData {
+   public:
+    TripMoveCallData(vehicle_gateway::VehicleGateway::AsyncService* service,
+                     grpc::ServerCompletionQueue* cq, MqttClient* mqtt_client);
+    void Proceed() override;
 
- private:
-  vehicle_gateway::VehicleGateway::AsyncService* service_;
-  grpc::ServerCompletionQueue* cq_;
-  grpc::ServerContext ctx_;
-  MqttClient* mqtt_client_;
+   private:
+    vehicle_gateway::VehicleGateway::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_;
+    grpc::ServerContext ctx_;
+    MqttClient* mqtt_client_;
 
-  vehicle_gateway::TripMoveRequest request_;
-  vehicle_gateway::TripMoveResponse response_;
-  grpc::ServerAsyncResponseWriter<vehicle_gateway::TripMoveResponse> responder_;
+    vehicle_gateway::TripMoveRequest request_;
+    vehicle_gateway::TripMoveResponse response_;
+    grpc::ServerAsyncResponseWriter<vehicle_gateway::TripMoveResponse>
+        responder_;
 
-  enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
-  CallStatus status_;
-};
-
-
-
+    enum CallStatus { CREATE, PROCESS, WAIT_MQTT, FINISH };
+    CallStatus status_;
+  };
 };
 
 #endif
