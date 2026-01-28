@@ -80,7 +80,9 @@ if(NOT Boost_FOUND AND APPLE AND HOMEBREW_PREFIX)
     if(Boost_FOUND)
         set(Boost_LIBRARIES ${Boost_THREAD_LIBRARY})
         set(Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIR})
-        add_library(Boost::thread UNKNOWN IMPORTED)
+        add_library(Boost::thread UNKNOWN IMPORTED
+                src/grpc/vehicle_gateway_service.cpp
+                src/grpc/vehicle_gateway_service.cpp)
         set_target_properties(Boost::thread PROPERTIES
             IMPORTED_LOCATION "${Boost_THREAD_LIBRARY}")
     endif()
@@ -108,7 +110,8 @@ add_subdirectory(proto)
 
 add_subdirectory(src)
 
-add_executable(vehicle_gateway src/main.cpp)
+add_executable(vehicle_gateway src/main.cpp
+        src/grpc/vehicle_gateway_service.cpp)
 target_link_libraries(vehicle_gateway PRIVATE gateway_lib)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
