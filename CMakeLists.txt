@@ -74,17 +74,15 @@ if(NOT Boost_FOUND AND APPLE AND HOMEBREW_PREFIX)
 
     include(FindPackageHandleStandardArgs)
     find_package_handle_standard_args(Boost
-        REQUIRED_VARS Boost_INCLUDE_DIR Boost_THREAD_LIBRARY
-        VERSION_VAR Boost_VERSION)
+            REQUIRED_VARS Boost_INCLUDE_DIR Boost_THREAD_LIBRARY
+            VERSION_VAR Boost_VERSION)
 
     if(Boost_FOUND)
         set(Boost_LIBRARIES ${Boost_THREAD_LIBRARY})
         set(Boost_INCLUDE_DIRS ${Boost_INCLUDE_DIR})
-        add_library(Boost::thread UNKNOWN IMPORTED
-                src/grpc/vehicle_gateway_service.cpp
-                src/grpc/vehicle_gateway_service.cpp)
+        add_library(Boost::thread UNKNOWN IMPORTED)
         set_target_properties(Boost::thread PROPERTIES
-            IMPORTED_LOCATION "${Boost_THREAD_LIBRARY}")
+                IMPORTED_LOCATION "${Boost_THREAD_LIBRARY}")
     endif()
 endif()
 
@@ -92,6 +90,10 @@ if(NOT Boost_FOUND)
     message(FATAL_ERROR "Could not find Boost library. Please ensure it is installed correctly.")
 endif()
 
+find_package(Protobuf CONFIG REQUIRED
+        PATHS /usr/local/lib/cmake/protobuf
+        NO_DEFAULT_PATH
+)
 find_package(gRPC REQUIRED)
 
 if(NOT TARGET protobuf::libprotobuf AND Protobuf_LIBRARIES)
@@ -110,8 +112,7 @@ add_subdirectory(proto)
 
 add_subdirectory(src)
 
-add_executable(vehicle_gateway src/main.cpp
-        src/grpc/vehicle_gateway_service.cpp)
+add_executable(vehicle_gateway src/main.cpp)
 target_link_libraries(vehicle_gateway PRIVATE gateway_lib)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
