@@ -27,7 +27,15 @@ void AuthManager::admin_setup() {
     return;
   }
 
-  setup_new_admin();
+  try {
+    setup_new_admin();
+  } catch (const std::exception &e) {
+    spdlog::warn("Admin setup failed: {}. Continuing without authentication...",
+                 e.what());
+
+    // Don't crash the application - continue without authentication
+    // The application can still handle MQTT communication
+  }
 }
 
 void AuthManager::setup_new_admin() {
@@ -43,6 +51,16 @@ void AuthManager::setup_new_admin() {
 
     auto response = http_client->Post(VehicleGatewayConstants::SIGNUP_URL,
                                       signup_headers, signup_data.dump());
+
+    if (!response.success) {
+      throw std::runtime_error("HTTP request failed: " +
+                               response.error_message);
+    }
+
+    if (response.body.empty()) {
+      throw std::runtime_error("Received empty response from server");
+    }
+
     auto json = nlohmann::json::parse(response.body);
 
     if (json["success"].get<bool>()) {
@@ -66,6 +84,16 @@ void AuthManager::setup_new_admin() {
 
     auto response = http_client->Post(VehicleGatewayConstants::VERIFY_URL,
                                       headers, verify_data.dump());
+
+    if (!response.success) {
+      throw std::runtime_error("HTTP request failed: " +
+                               response.error_message);
+    }
+
+    if (response.body.empty()) {
+      throw std::runtime_error("Received empty response from server");
+    }
+
     auto json = nlohmann::json::parse(response.body);
 
     if (json["success"].get<bool>()) {
@@ -96,6 +124,19 @@ bool AuthManager::login() {
 
     auto response = http_client->Post(VehicleGatewayConstants::LOGIN_URL,
                                       headers, login_data.dump());
+
+    if (!response.success) {
+      spdlog::debug("[AUTH] Login failed - HTTP request failed: {}",
+                    response.error_message);
+      return false;
+    }
+
+    if (response.body.empty()) {
+      spdlog::debug(
+          "[AUTH] Login failed - Received empty response from server");
+      return false;
+    }
+
     auto json = nlohmann::json::parse(response.body);
 
     if (json["success"].get<bool>()) {
@@ -113,7 +154,19 @@ bool AuthManager::login() {
 }
 
 void AuthManager::create_vehicles() {
+  if (cred.vehicle_created) {
+    spdlog::info("vehicle already created");
+    return;
+  }
+
   std::string token = get_valid_token();
+
+  if (token.empty()) {
+    spdlog::warn(
+        "No valid authentication token available. Skipping vehicle "
+        "creation...");
+    return;
+  }
 
   try {
     nlohmann::json vehicle_data = {
@@ -126,13 +179,25 @@ void AuthManager::create_vehicles() {
     auto response =
         http_client->Post(VehicleGatewayConstants::CREATE_VEHICLE_URL, headers,
                           vehicle_data.dump());
+
+    if (!response.success) {
+      throw std::runtime_error("HTTP request failed: " +
+                               response.error_message);
+    }
+
+    if (response.body.empty()) {
+      throw std::runtime_error("Received empty response from server");
+    }
+
     auto json = nlohmann::json::parse(response.body);
 
     if (response.status_code == 201) {
       spdlog::info("Vehicle created successfully");
+      cred.vehicle_created = true;
 
     } else if (response.status_code == 400) {
       spdlog::info("vehicle already exist");
+      cred.vehicle_created = true;
 
     } else if (response.status_code == 401) {
       spdlog::info("unauthorized needed");
@@ -145,15 +210,19 @@ void AuthManager::create_vehicles() {
       }
     }
 
-  }
-
-  catch (std::exception &e) {
+  } catch (const std::exception &e) {
     std::string err_msg = e.what();
     if (err_msg.find("already exist") != std::string::npos) {
       spdlog::info("vehicle already exist");
-
+      cred.vehicle_created = true;
     } else if (err_msg.find("Authorization failed") != std::string::npos) {
       spdlog::info("Authorization failed");
+    } else if (err_msg.find("HTTP request failed") != std::string::npos) {
+      spdlog::warn(
+          "Vehicle creation failed due to connectivity issues: {}. Continuing "
+          "without vehicle registration...",
+          err_msg);
+      // Don't crash - continue without vehicle registration
     } else {
       spdlog::error("Failed to create vehicle: {}", err_msg);
     }
@@ -165,8 +234,14 @@ std::string AuthManager::get_valid_token() {
     return cred.token;
   }
 
-  login();
-  return cred.token;
+  if (login()) {
+    return cred.token;
+  }
+
+  // Return empty token if login fails - let the caller handle this
+  spdlog::warn(
+      "Failed to obtain valid token - authentication may be unavailable");
+  return "";
 }
 
 void AuthManager::set_headers() {

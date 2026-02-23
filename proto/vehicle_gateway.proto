@@ -10,7 +10,8 @@ service VehicleGateway {
   rpc SendStatus(StatusRequest) returns (StatusResponse);
   rpc SendArrive(ArriveRequest)returns (ArriveResponse);
   rpc UpdateVehicleLocation(UpdateVehicleLocationRequest) returns (UpdateVehicleLocationResponse);
-
+  rpc TripInit(TripInitRequest) returns (TripInitResponse);
+  rpc TripMove(TripMoveRequest) returns (TripMoveResponse);
 }
 
 
@@ -61,13 +62,40 @@ message ArriveResponse{
 
 message UpdateVehicleLocationRequest
 {
- string vinNumber = 1;
- double longitude = 2;
- double latitude = 3;
+  string vinNumber = 1;
+  double longitude = 2;
+  double latitude = 3;
 }
 
 message UpdateVehicleLocationResponse
 {
-bool success = 1;
- string message = 2;
+  bool success = 1;
+  string message = 2;
+}
+
+
+message TripInitRequest {
+  string vin_number = 1;
+  int64 request_id = 2;
+  double start_long = 3;
+  double start_lat = 4;
+  double end_long = 5;
+  double end_lat = 6;
+}
+
+message TripInitResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message TripMoveRequest {
+  string vin_number = 1;
+  int64 trip_id = 2;
+  double longitude = 3;
+  double latitude = 4;
+}
+
+message TripMoveResponse {
+  bool success = 1;
+  string message = 2;
 }
