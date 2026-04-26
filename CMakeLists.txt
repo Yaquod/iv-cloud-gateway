@@ -93,15 +93,6 @@ endif()
 find_package(Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
 
-if(NOT TARGET protobuf::libprotobuf AND Protobuf_LIBRARIES)
-    message(STATUS "Protobuf target 'protobuf::libprotobuf' not found. Creating ALIAS.")
-    add_library(protobuf::libprotobuf ALIAS ${Protobuf_LIBRARIES})
-endif()
-
-if(NOT TARGET gRPC::grpc_cpp_plugin)
-    message(FATAL_ERROR "gRPC C++ plugin target (gRPC::grpc_cpp_plugin) not found. Check your gRPC installation.")
-endif()
-
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)
 

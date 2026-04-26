@@ -16,10 +16,12 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
-#include <chrono>
+
 #include "../../../src/transport/mqtt_client/mqtt_client.h"
 
 using namespace gateway::transport;
@@ -27,12 +29,8 @@ using namespace gateway::transport;
 class MqttClientTest : public ::testing::Test {
  protected:
   MqttClient client{"broker.hivemq.com", 1883, "test_client_id"};
-  void SetUp() override {
-    client.start();
-  }
-  void TearDown() override {
-    client.stop();
-  }
+  void SetUp() override { client.start(); }
+  void TearDown() override { client.stop(); }
 };
 
 TEST_F(MqttClientTest, ConnectDisconnect) {
@@ -45,11 +43,13 @@ TEST_F(MqttClientTest, ConnectDisconnect) {
 
 TEST_F(MqttClientTest, PublishSuccess) {
   std::atomic<bool> called{false};
-  client.publish("mqtt5/test", "hello-mqtt", [&](bool success, const std::string& msg) {
-    EXPECT_TRUE(success);
-    called = true;
-  });
-  for (int i = 0; i < 20 && !called; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  client.publish("mqtt5/test", "hello-mqtt",
+                 [&](bool success, const std::string& msg) {
+                   EXPECT_TRUE(success);
+                   called = true;
+                 });
+  for (int i = 0; i < 20 && !called; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_TRUE(called);
 }
 
@@ -63,11 +63,12 @@ TEST_F(MqttClientTest, MessageArrivalCallback) {
   std::mutex mtx;
   std::condition_variable cv;
   bool received = false;
-  client.set_message_handler([&](const std::string& topic, const std::string& payload) {
-    std::lock_guard<std::mutex> lock(mtx);
-    received = true;
-    cv.notify_one();
-  });
+  client.set_message_handler(
+      [&](const std::string& topic, const std::string& payload) {
+        std::lock_guard<std::mutex> lock(mtx);
+        received = true;
+        cv.notify_one();
+      });
   client.subscribe("mqtt5/test");
   client.publish("mqtt5/test", "test-payload", nullptr);
   std::unique_lock<std::mutex> lock(mtx);
@@ -81,7 +82,8 @@ TEST_F(MqttClientTest, PublishFailureInvalidTopic) {
     EXPECT_FALSE(success);
     called = true;
   });
-  for (int i = 0; i < 20 && !called; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  for (int i = 0; i < 20 && !called; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_TRUE(called);
 }
 
@@ -101,11 +103,13 @@ TEST_F(MqttClientTest, DoubleStartStop) {
 TEST_F(MqttClientTest, PublishBeforeStart) {
   MqttClient temp_client{"broker.hivemq.com", 1883, "test_client_id2"};
   std::atomic<bool> called{false};
-  temp_client.publish("mqtt5/test", "payload", [&](bool success, const std::string& msg) {
-    EXPECT_FALSE(success);
-    called = true;
-  });
-  for (int i = 0; i < 20 && !called; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  temp_client.publish("mqtt5/test", "payload",
+                      [&](bool success, const std::string& msg) {
+                        EXPECT_FALSE(success);
+                        called = true;
+                      });
+  for (int i = 0; i < 20 && !called; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_TRUE(called);
 }
 
