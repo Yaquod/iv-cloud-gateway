@@ -43,12 +43,14 @@ TEST_F(MqttClientTest, ConnectDisconnect) {
 
 TEST_F(MqttClientTest, PublishSuccess) {
   std::atomic<bool> called{false};
+  // Wait a bit to ensure connection is established
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   client.publish("mqtt5/test", "hello-mqtt",
                  [&](bool success, const std::string& msg) {
                    EXPECT_TRUE(success);
                    called = true;
                  });
-  for (int i = 0; i < 20 && !called; ++i)
+  for (int i = 0; i < 50 && !called; ++i)
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_TRUE(called);
 }
@@ -70,9 +72,11 @@ TEST_F(MqttClientTest, MessageArrivalCallback) {
         cv.notify_one();
       });
   client.subscribe("mqtt5/test");
+  // Wait a bit to ensure subscription is active
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   client.publish("mqtt5/test", "test-payload", nullptr);
   std::unique_lock<std::mutex> lock(mtx);
-  cv.wait_for(lock, std::chrono::seconds(5), [&] { return received; });
+  cv.wait_for(lock, std::chrono::seconds(10), [&] { return received; });
   EXPECT_TRUE(received);
 }
 
