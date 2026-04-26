@@ -9,8 +9,8 @@
 #include "auth_manager/auth_manager.h"
 #include "gateway.h"
 
-std::atomic<bool> shutdown_req{false};
-cloud_gateway::Gateway* global_gateway = nullptr;
+// std::atomic<bool> shutdown_req{false};
+// Gateway* global_gateway = nullptr;
 
 // NOTE: The following code is commented out because it requires refactoring to
 // work with the new MQTT client implementation. The Gateway, AuthManager, and

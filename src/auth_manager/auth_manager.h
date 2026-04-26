@@ -34,7 +34,7 @@ class AuthManager {
     int seat_no = 4;
   };
 
-  AuthManager(cloud_gateway::HttpClient* http_client);
+  AuthManager(gateway::transport::HttpClient* http_client);
   void admin_setup();
   void create_vehicles();
   std::string get_valid_token();
@@ -43,7 +43,7 @@ class AuthManager {
   const Credentials& get_credentials() const { return cred; }
 
  private:
-  cloud_gateway::HttpClient* http_client;
+  gateway::transport::HttpClient* http_client;
   Credentials cred;
   VehicleData data;
   void setup_new_admin();

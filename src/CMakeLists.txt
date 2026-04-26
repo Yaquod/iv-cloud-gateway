@@ -1,8 +1,6 @@
 add_subdirectory(transport/http_client)
 add_subdirectory(transport/mqtt_client)
-#added
 add_subdirectory(grpc)
-#added
 add_subdirectory(client)
 add_subdirectory(auth_manager)
 
@@ -10,12 +8,10 @@ add_library(gateway_lib STATIC
         gateway.cpp
         $<TARGET_OBJECTS:http_client_lib>
         $<TARGET_OBJECTS:mqtt_client_lib>
-        #added
         $<TARGET_OBJECTS:vehicle_gateway_service_lib>
         $<TARGET_OBJECTS:vehicle_gateway_auth_manager_lib>
         $<TARGET_OBJECTS:client_lib>
         infra/config.h
-
 
 )
 
@@ -23,7 +19,6 @@ target_include_directories(gateway_lib
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
-        #added
         ${CMAKE_SOURCE_DIR}/src
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -39,6 +34,8 @@ target_link_libraries(gateway_lib
         OpenSSL::SSL
         OpenSSL::Crypto
         spdlog::spdlog
+        $<TARGET_NAME_IF_EXISTS:absl::log_internal_check_op>
+        $<TARGET_NAME_IF_EXISTS:absl::log_internal_message>
         yaml-cpp
         PRIVATE
         Threads::Threads
@@ -48,8 +45,3 @@ target_link_libraries(gateway_lib
 set_target_properties(gateway_lib PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
-
-#target_compile_options(gateway_lib PRIVATE
-#        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-#        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-#)

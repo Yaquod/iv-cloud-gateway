@@ -73,6 +73,7 @@ endif()
 
 find_package(Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
+find_package(absl QUIET)
 
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)

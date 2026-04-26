@@ -13,8 +13,6 @@
 #include "transport/http_client/http_client.h"
 #include "transport/mqtt_client/mqtt_client.h"
 
-namespace cloud_gateway {
-
 class Gateway {
  public:
   Gateway();
@@ -23,19 +21,17 @@ class Gateway {
   void initialize();
   void run();
   void shutdown();
-  HttpClient* get_http_client() { return httpClient.get(); }
+  gateway::transport::HttpClient* get_http_client() { return httpClient.get(); }
 
  private:
-  std::unique_ptr<HttpClient> httpClient;
-  std::unique_ptr<MqttClient> mqttClient;
+  std::unique_ptr<gateway::transport::HttpClient> httpClient;
+  std::unique_ptr<gateway::transport::MqttClient> mqttClient;
   std::unique_ptr<grpc::Server> server;
-  std::unique_ptr<VehicleGatewayServiceImp> service;
+  // std::unique_ptr<VehicleGatewayServiceImp> service;
   std::unique_ptr<grpc::ServerCompletionQueue> cq;
   std::thread cq_thread;
 
   void HandleRpcs();
 };
-
-}  // namespace cloud_gateway
 
 #endif

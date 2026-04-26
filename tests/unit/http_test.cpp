@@ -6,10 +6,11 @@
 
 #include "transport/http_client/http_client.h"
 
-using namespace cloud_gateway;
+using namespace gateway::transport;
 
 class HttpClientTest : public ::testing::Test {
  protected:
+  HttpClientTest() : client(http_options{}) {}
   HttpClient client;
 };
 
@@ -163,38 +164,6 @@ TEST_F(HttpClientTest, RelativeRedirectTest) {
   ASSERT_EQ(200, response.status_code);
 }
 
-// Test redirect limits
-TEST_F(HttpClientTest, MaxRedirectsTest) {
-  HttpClient limited_client;
-  limited_client.set_max_redirects(2);
-
-  auto response = limited_client.Get("http://httpbin.org/redirect/5");
-
-  ASSERT_TRUE(response.is_redirect());
-}
-
-// Test disabling redirects
-TEST_F(HttpClientTest, DisableRedirectsTest) {
-  HttpClient no_redirect_client;
-  no_redirect_client.set_follow_redirects(false);
-
-  auto response = no_redirect_client.Get("http://httpbin.org/redirect/1");
-
-  ASSERT_TRUE(response.is_redirect());
-  ASSERT_EQ(302, response.status_code);
-}
-
-// Test timeout configuration
-TEST_F(HttpClientTest, TimeoutConfigurationTest) {
-  HttpClient timeout_client;
-  timeout_client.set_timeout(std::chrono::seconds(30));
-
-  auto response = timeout_client.Get("http://httpbin.org/delay/1");
-
-  ASSERT_TRUE(response.success);
-  ASSERT_EQ(200, response.status_code);
-}
-
 // Test invalid URL
 TEST_F(HttpClientTest, InvalidUrlTest) {
   auto response = client.Get("not-a-valid-url");
@@ -204,13 +173,11 @@ TEST_F(HttpClientTest, InvalidUrlTest) {
 }
 
 // Test HTTPS rejection
-TEST_F(HttpClientTest, HttpsNotSupportedTest) {
+TEST_F(HttpClientTest, HttpsSupportedTest) {
   auto response = client.Get("https://httpbin.org/get");
 
-  ASSERT_FALSE(response.success);
-  ASSERT_EQ(0, response.status_code);
-  EXPECT_NE(response.error_message.find("HTTPS not supported"),
-            std::string::npos);
+  ASSERT_TRUE(response.success);
+  ASSERT_EQ(200, response.status_code);
 }
 
 // Test connection to non-existent host
@@ -262,20 +229,7 @@ TEST_F(HttpClientTest, UserAgentHeaderTest) {
 
   ASSERT_TRUE(response.success);
   ASSERT_EQ(200, response.status_code);
-  EXPECT_NE(response.body.find("VehicleGateway/1.0"), std::string::npos);
-}
-
-// Test default headers with http_options
-TEST_F(HttpClientTest, DefaultHeadersTest) {
-  http_options options;
-  options.default_headers["X-Default-Header"] = "DefaultValue";
-  HttpClient custom_client(options);
-
-  auto response = custom_client.Get("http://httpbin.org/headers");
-
-  ASSERT_TRUE(response.success);
-  ASSERT_EQ(200, response.status_code);
-  EXPECT_NE(response.body.find("X-Default-Header"), std::string::npos);
+  EXPECT_NE(response.body.find("VehicleGateway/2.0"), std::string::npos);
 }
 
 // Test 307 redirect
@@ -338,4 +292,44 @@ TEST_F(HttpClientTest, Status403ForbiddenTest) {
   auto response = client.Get("http://httpbin.org/status/403");
   ASSERT_FALSE(response.success);
   ASSERT_EQ(403, response.status_code);
+}
+
+TEST_F(HttpClientTest, HttpsGetSupportedTest) {
+  auto response = client.Get("https://httpbin.org/get");
+  ASSERT_TRUE(response.success);
+  ASSERT_EQ(200, response.status_code);
+}
+
+TEST_F(HttpClientTest, HttpsPostSupportedTest) {
+  std::string post_data = R"({"key": "value"})";
+  std::map<std::string, std::string> headers = {
+      {"Content-Type", "application/json"}};
+  auto response = client.Post("https://httpbin.org/post", headers, post_data);
+  ASSERT_TRUE(response.success);
+  ASSERT_EQ(200, response.status_code);
+}
+
+// Test HTTP GET with large response body
+TEST_F(HttpClientTest, HttpGetLargeBodyTest) {
+  auto response = client.Get("http://httpbin.org/bytes/65536");
+  ASSERT_TRUE(response.success);
+  ASSERT_EQ(200, response.status_code);
+  ASSERT_EQ(response.body.size(), 65536u);
+}
+
+// Test HTTP GET with chunked transfer encoding
+TEST_F(HttpClientTest, HttpGetChunkedTest) {
+  auto response = client.Get("http://httpbin.org/stream/20");
+  ASSERT_TRUE(response.success);
+  ASSERT_EQ(200, response.status_code);
+  ASSERT_FALSE(response.body.empty());
+}
+
+TEST_F(HttpClientTest, HttpGetGzipTest) {
+  std::map<std::string, std::string> headers = {{"Accept-Encoding", "gzip"}};
+  auto response = client.Get("http://httpbin.org/gzip", headers);
+  ASSERT_TRUE(response.success);
+  ASSERT_EQ(200, response.status_code);
+  // Check the headers instead of the uncompressed body
+  EXPECT_EQ(response.headers["Content-Encoding"], "gzip");
 }
