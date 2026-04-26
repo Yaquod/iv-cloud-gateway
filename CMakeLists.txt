@@ -90,11 +90,10 @@ if(NOT Boost_FOUND)
     message(FATAL_ERROR "Could not find Boost library. Please ensure it is installed correctly.")
 endif()
 
-# for me
-#find_package(Protobuf CONFIG REQUIRED
-#        PATHS /usr/local/lib/cmake/protobuf
-#        NO_DEFAULT_PATH
-#)
+find_package(Protobuf CONFIG REQUIRED
+        PATHS /usr/local/lib/cmake/protobuf
+        NO_DEFAULT_PATH
+)
 find_package(gRPC REQUIRED)
 
 if(NOT TARGET protobuf::libprotobuf AND Protobuf_LIBRARIES)
