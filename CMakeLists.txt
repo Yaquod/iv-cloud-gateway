@@ -33,25 +33,6 @@ if(ENABLE_SANITIZERS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Sanitizers.cm
     enable_sanitizers()
 endif()
 
-# On macOS, we need to hint to CMake where to find libraries installed via Homebrew.
-if(APPLE)
-    if(DEFINED ENV{HOMEBREW_PREFIX})
-        set(HOMEBREW_PREFIX "$ENV{HOMEBREW_PREFIX}")
-    elseif(IS_DIRECTORY "/opt/homebrew")
-        set(HOMEBREW_PREFIX "/opt/homebrew") # Apple Silicon
-    elseif(IS_DIRECTORY "/usr/local")
-        set(HOMEBREW_PREFIX "/usr/local") # Intel
-    endif()
-
-    # If Homebrew is found, add its paths to CMake's search prefixes.
-    if(HOMEBREW_PREFIX AND IS_DIRECTORY "${HOMEBREW_PREFIX}")
-        list(APPEND CMAKE_PREFIX_PATH "${HOMEBREW_PREFIX}")
-        set(ENV{PKG_CONFIG_PATH} "${HOMEBREW_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-    endif()
-endif()
-
-message(STATUS "Finding system dependencies...")
-
 # Threading
 find_package(Threads REQUIRED)
 
