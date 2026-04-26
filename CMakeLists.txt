@@ -33,25 +33,6 @@ if(ENABLE_SANITIZERS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Sanitizers.cm
     enable_sanitizers()
 endif()
 
-# On macOS, we need to hint to CMake where to find libraries installed via Homebrew.
-if(APPLE)
-    if(DEFINED ENV{HOMEBREW_PREFIX})
-        set(HOMEBREW_PREFIX "$ENV{HOMEBREW_PREFIX}")
-    elseif(IS_DIRECTORY "/opt/homebrew")
-        set(HOMEBREW_PREFIX "/opt/homebrew") # Apple Silicon
-    elseif(IS_DIRECTORY "/usr/local")
-        set(HOMEBREW_PREFIX "/usr/local") # Intel
-    endif()
-
-    # If Homebrew is found, add its paths to CMake's search prefixes.
-    if(HOMEBREW_PREFIX AND IS_DIRECTORY "${HOMEBREW_PREFIX}")
-        list(APPEND CMAKE_PREFIX_PATH "${HOMEBREW_PREFIX}")
-        set(ENV{PKG_CONFIG_PATH} "${HOMEBREW_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-    endif()
-endif()
-
-message(STATUS "Finding system dependencies...")
-
 # Threading
 find_package(Threads REQUIRED)
 
@@ -90,20 +71,8 @@ if(NOT Boost_FOUND)
     message(FATAL_ERROR "Could not find Boost library. Please ensure it is installed correctly.")
 endif()
 
-find_package(Protobuf CONFIG REQUIRED
-        PATHS /usr/local/lib/cmake/protobuf
-        NO_DEFAULT_PATH
-)
+find_package(Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
-
-if(NOT TARGET protobuf::libprotobuf AND Protobuf_LIBRARIES)
-    message(STATUS "Protobuf target 'protobuf::libprotobuf' not found. Creating ALIAS.")
-    add_library(protobuf::libprotobuf ALIAS ${Protobuf_LIBRARIES})
-endif()
-
-if(NOT TARGET gRPC::grpc_cpp_plugin)
-    message(FATAL_ERROR "gRPC C++ plugin target (gRPC::grpc_cpp_plugin) not found. Check your gRPC installation.")
-endif()
 
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)

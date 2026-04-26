@@ -10,8 +10,8 @@
 
 #include "client/client.h"
 #include "grpc/vehicle_gateway_service.h"
-#include "http_client/http_client.h"
-#include "mqtt_client/mqtt_client.h"
+#include "transport/http_client/http_client.h"
+#include "transport/mqtt_client/mqtt_client.h"
 
 namespace cloud_gateway {
 

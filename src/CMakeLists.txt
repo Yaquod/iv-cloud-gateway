@@ -1,5 +1,5 @@
-add_subdirectory(http_client)
-add_subdirectory(mqtt_client)
+add_subdirectory(transport/http_client)
+add_subdirectory(transport/mqtt_client)
 #added
 add_subdirectory(grpc)
 #added
@@ -14,7 +14,7 @@ add_library(gateway_lib STATIC
         $<TARGET_OBJECTS:vehicle_gateway_service_lib>
         $<TARGET_OBJECTS:vehicle_gateway_auth_manager_lib>
         $<TARGET_OBJECTS:client_lib>
-
+        infra/config.h
 
 
 )

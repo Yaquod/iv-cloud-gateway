@@ -5,7 +5,7 @@ add_library(http_client_lib OBJECT
 
 target_include_directories(http_client_lib
         PUBLIC ${CMAKE_SOURCE_DIR}/src
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+        PRIVATE .
 )
 
 target_link_libraries(http_client_lib
