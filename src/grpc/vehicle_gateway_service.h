@@ -9,11 +9,11 @@
 #include <thread>
 
 #include "../../build/proto/vehicle_gateway.grpc.pb.h"
-#include "http_client/http_client.h"
-#include "mqtt_client/mqtt_client.h"
+#include "transport/http_client/http_client.h"
+#include "transport/mqtt_client/mqtt_client.h"
 
 using cloud_gateway::HttpClient;
-using cloud_gateway::MqttClient;
+using gateway::transport::MqttClient;
 using grpc::ServerContext;
 using grpc::Status;
 

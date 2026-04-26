@@ -12,6 +12,11 @@
 std::atomic<bool> shutdown_req{false};
 cloud_gateway::Gateway* global_gateway = nullptr;
 
+// NOTE: The following code is commented out because it requires refactoring to
+// work with the new MQTT client implementation. The Gateway, AuthManager, and
+// trip flow logic depend on the old MQTT client interface and need to be
+// updated.
+/*
 extern void StopTripFlow();
 
 void signal_handler(int sig) {
@@ -22,7 +27,13 @@ void signal_handler(int sig) {
     global_gateway->shutdown();
   }
 }
+*/
 
+// NOTE: The following code is commented out because it requires refactoring to
+// work with the new MQTT client implementation. The Gateway, AuthManager, and
+// trip flow logic depend on the old MQTT client interface and need to be
+// updated.
+/*
 int main() {
   cloud_gateway::Gateway gateway;
   global_gateway = &gateway;
@@ -48,5 +59,13 @@ int main() {
 
   spdlog::info("Clean exit");
 
+  return 0;
+}
+*/
+
+int main() {
+  spdlog::info(
+      "This main is disabled for now. See comments above. Refactor required "
+      "for new MQTT client integration.");
   return 0;
 }

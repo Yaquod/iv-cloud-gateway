@@ -6,7 +6,7 @@
 #define YAQOUD_PROJECT_AUTH_MANAGER_H
 #include <string>
 
-#include "http_client/http_client.h"
+#include "transport/http_client/http_client.h"
 
 class AuthManager {
  public:
