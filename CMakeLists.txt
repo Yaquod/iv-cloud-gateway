@@ -71,9 +71,8 @@ if(NOT Boost_FOUND)
     message(FATAL_ERROR "Could not find Boost library. Please ensure it is installed correctly.")
 endif()
 
-find_package(Protobuf REQUIRED)
-find_package(gRPC REQUIRED)
-find_package(absl REQUIRED)
+find_package(protobuf CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
 
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)

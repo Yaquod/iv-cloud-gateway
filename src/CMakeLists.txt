@@ -20,7 +20,6 @@ target_include_directories(gateway_lib
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
-        #added
         ${CMAKE_SOURCE_DIR}/src
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35,8 +34,6 @@ target_link_libraries(gateway_lib
         nlohmann_json::nlohmann_json
         OpenSSL::SSL
         OpenSSL::Crypto
-        absl::log_internal_check_op
-        absl::log_internal_message
         spdlog::spdlog
         yaml-cpp
         PRIVATE

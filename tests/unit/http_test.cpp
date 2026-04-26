@@ -303,7 +303,7 @@ TEST_F(HttpClientTest, HttpsGetSupportedTest) {
 TEST_F(HttpClientTest, HttpsPostSupportedTest) {
   std::string post_data = R"({"key": "value"})";
   std::map<std::string, std::string> headers = {
-    {"Content-Type", "application/json"}};
+      {"Content-Type", "application/json"}};
   auto response = client.Post("https://httpbin.org/post", headers, post_data);
   ASSERT_TRUE(response.success);
   ASSERT_EQ(200, response.status_code);
@@ -326,8 +326,7 @@ TEST_F(HttpClientTest, HttpGetChunkedTest) {
 }
 
 TEST_F(HttpClientTest, HttpGetGzipTest) {
-  std::map<std::string, std::string> headers = {
-    {"Accept-Encoding", "gzip"}};
+  std::map<std::string, std::string> headers = {{"Accept-Encoding", "gzip"}};
   auto response = client.Get("http://httpbin.org/gzip", headers);
   ASSERT_TRUE(response.success);
   ASSERT_EQ(200, response.status_code);

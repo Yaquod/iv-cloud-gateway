@@ -53,6 +53,7 @@ jobs:
             libssl-dev zlib1g-dev \
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
+            libabsl-dev \
             protobuf-compiler-grpc protobuf-compiler \
             ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
 
@@ -102,6 +103,7 @@ jobs:
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
             protobuf-compiler-grpc protobuf-compiler \
+            libabsl-dev \
             clang-17 clang++-17 \
             libc++-17-dev libc++abi-17-dev
 
@@ -146,6 +148,7 @@ jobs:
             libssl-dev zlib1g-dev \
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
+            libabsl-dev \
             protobuf-compiler-grpc protobuf-compiler
 
       - name: Configure
@@ -184,6 +187,7 @@ jobs:
             libssl-dev zlib1g-dev \
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
+            libabsl-dev \
             protobuf-compiler-grpc protobuf-compiler
 
       - name: Create TSan Suppressions
@@ -237,6 +241,7 @@ jobs:
             libssl-dev zlib1g-dev \
             libboost-system-dev libboost-thread-dev \
             libgrpc++-dev libprotobuf-dev \
+            libabsl-dev \
             protobuf-compiler-grpc protobuf-compiler \
             lcov gcovr
 
