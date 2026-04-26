@@ -13,7 +13,6 @@ add_library(gateway_lib STATIC
         $<TARGET_OBJECTS:client_lib>
         infra/config.h
 
-
 )
 
 target_include_directories(gateway_lib
@@ -35,6 +34,8 @@ target_link_libraries(gateway_lib
         OpenSSL::SSL
         OpenSSL::Crypto
         spdlog::spdlog
+        $<TARGET_NAME_IF_EXISTS:absl::log_internal_check_op>
+        $<TARGET_NAME_IF_EXISTS:absl::log_internal_message>
         yaml-cpp
         PRIVATE
         Threads::Threads
