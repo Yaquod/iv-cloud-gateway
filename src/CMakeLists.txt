@@ -1,8 +1,6 @@
 add_subdirectory(transport/http_client)
 add_subdirectory(transport/mqtt_client)
-#added
 add_subdirectory(grpc)
-#added
 add_subdirectory(client)
 add_subdirectory(auth_manager)
 
@@ -10,7 +8,6 @@ add_library(gateway_lib STATIC
         gateway.cpp
         $<TARGET_OBJECTS:http_client_lib>
         $<TARGET_OBJECTS:mqtt_client_lib>
-        #added
         $<TARGET_OBJECTS:vehicle_gateway_service_lib>
         $<TARGET_OBJECTS:vehicle_gateway_auth_manager_lib>
         $<TARGET_OBJECTS:client_lib>
@@ -38,6 +35,8 @@ target_link_libraries(gateway_lib
         nlohmann_json::nlohmann_json
         OpenSSL::SSL
         OpenSSL::Crypto
+        absl::log_internal_check_op
+        absl::log_internal_message
         spdlog::spdlog
         yaml-cpp
         PRIVATE
@@ -48,8 +47,3 @@ target_link_libraries(gateway_lib
 set_target_properties(gateway_lib PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
-
-#target_compile_options(gateway_lib PRIVATE
-#        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-#        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-#)

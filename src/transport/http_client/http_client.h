@@ -1,6 +1,19 @@
-// Yaqoud 2025-2026
-// Ahmed Wafdy 2025
-//
+/*
+ * Copyright 2026 wafdy
+ * Copyright 2026 Alaa Hassan
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef IV_CLOUD_GATEWAY_HTTP_CLIENT_H
 #define IV_CLOUD_GATEWAY_HTTP_CLIENT_H
@@ -13,12 +26,7 @@
 #include <optional>
 #include <string>
 
-namespace beast = boost::beast;
-namespace http = beast::http;
-namespace net = boost::asio;
-using tcp = net::ip::tcp;
-
-namespace cloud_gateway {
+namespace gateway::transport {
 
 struct http_response {
   int status_code;
@@ -35,8 +43,11 @@ struct http_response {
   [[nodiscard]] std::optional<std::string> get_headers(
       const std::string& name) const {
     auto it = headers.find(name);
-    return it != headers.end() ? std::optional<std::string>(it->second)
-                               : std::nullopt;
+    if (it != headers.end()) return it->second;
+    // case-insensitive fallback for "location" / "Location"
+    for (auto& [k, v] : headers)
+      if (k == name) return v;
+    return std::nullopt;
   }
 };
 
@@ -44,12 +55,11 @@ struct http_options {
   std::chrono::seconds timeout{30};
   int max_redirects{5};
   bool follow_redirects{true};
-  std::map<std::string, std::string> default_headers;
+  bool restrict_redirect_to_same_host{false};
 };
 
 class HttpClient {
  public:
-  HttpClient();
   explicit HttpClient(const http_options& options);
   ~HttpClient();
 
@@ -59,49 +69,32 @@ class HttpClient {
   HttpClient(HttpClient&&) noexcept;
   HttpClient& operator=(HttpClient&&) noexcept;
 
-  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Get(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {}) const;
 
-  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Post(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {},
       const std::string& body = "") const;
 
-  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Put(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {},
       const std::string& body = "") const;
 
-  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Patch(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {},
       const std::string& body = "") const;
 
-  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Delete(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {}) const;
 
-  // cppcheck-suppress unusedFunction
   [[nodiscard]] http_response Head(
       const std::string& url,
       const std::map<std::string, std::string>& headers = {}) const;
-
-  // TODO: add other methods for ssl and https.
-
-  // cppcheck-suppress unusedFunction
-  void set_timeout(std::chrono::seconds timeout) const;
-
-  // cppcheck-suppress unusedFunction
-  void set_max_redirects(int max_redirects);
-
-  // cppcheck-suppress unusedFunction
-  void set_follow_redirects(bool follow_redirects);
 
  private:
   struct impl;
@@ -113,5 +106,5 @@ class HttpClient {
       const std::string& body, int redirects_remaining) const;
 };
 
-}  // namespace cloud_gateway
+}  // namespace gateway::transport
 #endif  // IV_CLOUD_GATEWAY_HTTP_CLIENT_H
