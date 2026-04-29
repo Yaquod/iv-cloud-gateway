@@ -38,18 +38,33 @@ void MqttClient::start() {
   if (started_.exchange(true)) return;
   stopped_ = false;
   if (runner_.joinable()) runner_.join();
+
   ioc_ = std::make_unique<boost::asio::io_context>();
+
   client_ = std::unique_ptr<boost::mqtt5::mqtt_client<
       boost::asio::ip::tcp::socket, std::monostate, boost::mqtt5::logger>>(
       new boost::mqtt5::mqtt_client<boost::asio::ip::tcp::socket,
                                     std::monostate, boost::mqtt5::logger>(
           *ioc_, {}, boost::mqtt5::logger(boost::mqtt5::log_level::info)));
+
   client_->brokers(broker_, port_).credentials(clientId_);
+
   spdlog::info("[MQTT] trying to connect to broker {}:{}", broker_, port_);
   client_->async_run([](const boost::system::error_code& ec) {
     if (ec) spdlog::error("[MQTT connect Error] {}", ec.message());
   });
+
+  boost::asio::post(*ioc_, [this]() {
+    spdlog::info("[MQTT] flushing {} pending subscriptions",
+                 pending_topics_.size());
+    for (const auto& t : pending_topics_) {
+      do_subscribe(t);
+    }
+    pending_topics_.clear();
+  });
+
   arm_receive();
+
   runner_ = std::thread([this]() {
     auto guard = boost::asio::make_work_guard(*ioc_);
     ioc_->run();
@@ -94,25 +109,11 @@ void MqttClient::publish(
 }
 
 void MqttClient::subscribe(const std::string& topic) {
-  if (!started_ || !client_) return;
-  boost::mqtt5::subscribe_topic sub_topic = boost::mqtt5::subscribe_topic{
-      topic,
-      boost::mqtt5::subscribe_options{
-          boost::mqtt5::qos_e::at_most_once, boost::mqtt5::no_local_e::no,
-          boost::mqtt5::retain_as_published_e::retain,
-          boost::mqtt5::retain_handling_e::send}};
+  pending_topics_.push_back(topic);  // always store
 
-  client_->async_subscribe(
-      sub_topic, boost::mqtt5::subscribe_props{},
-      [this, topic](boost::mqtt5::error_code ec,
-                    const std::vector<boost::mqtt5::reason_code>&,
-                    const boost::mqtt5::suback_props& /*props*/) {
-        if (ec)
-          spdlog::error("[MQTT] failed to subscribe to topic {} :{}", topic,
-                        ec.message());
-        else
-          spdlog::info("[MQTT] subscribed to {}", topic);
-      });
+  if (started_ && client_ && ioc_) {
+    boost::asio::post(*ioc_, [this, topic]() { do_subscribe(topic); });
+  }
 }
 
 void MqttClient::set_message_handler(MessageHandler handler) {
@@ -126,20 +127,42 @@ void MqttClient::arm_receive() {
                                 boost::mqtt5::publish_props) {
     if (ec) {
       if (!stopped_) {
-        spdlog::error("[MQTT] received {} : {}", topic, payload);
+        spdlog::error("[MQTT] receive error: {}", ec.message());
         arm_receive();
       }
       return;
     }
 
-    if (cb_) {
-      cb_(topic, payload);
+    if (!pending_topics_.empty()) {
+      for (const auto& t : pending_topics_) {
+        do_subscribe(t);
+      }
+      pending_topics_.clear();
     }
 
-    if (!stopped_) {
-      arm_receive();
-    }
+    if (cb_) cb_(topic, payload);
+    if (!stopped_) arm_receive();
   });
 }
 
+void MqttClient::do_subscribe(const std::string& topic) {
+  boost::mqtt5::subscribe_topic sub_topic = boost::mqtt5::subscribe_topic{
+      topic,
+      boost::mqtt5::subscribe_options{
+          boost::mqtt5::qos_e::at_most_once, boost::mqtt5::no_local_e::no,
+          boost::mqtt5::retain_as_published_e::retain,
+          boost::mqtt5::retain_handling_e::send}};
+
+  client_->async_subscribe(
+      sub_topic, boost::mqtt5::subscribe_props{},
+      [this, topic](boost::mqtt5::error_code ec,
+                    const std::vector<boost::mqtt5::reason_code>&,
+                    const boost::mqtt5::suback_props&) {
+        if (ec)
+          spdlog::error("[MQTT] failed to subscribe to '{}': {}", topic,
+                        ec.message());
+        else
+          spdlog::info("[MQTT] subscribed to '{}'", topic);
+      });
+}
 }  // namespace gateway::transport

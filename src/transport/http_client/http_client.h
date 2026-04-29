@@ -60,7 +60,7 @@ struct http_options {
 
 class HttpClient {
  public:
-  explicit HttpClient(const http_options& options);
+  explicit HttpClient(const http_options& options = {});
   ~HttpClient();
 
   HttpClient(const HttpClient&) = delete;

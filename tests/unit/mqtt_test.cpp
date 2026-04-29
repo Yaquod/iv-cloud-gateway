@@ -22,7 +22,10 @@
 #include <condition_variable>
 #include <mutex>
 
-#include "../../../src/transport/mqtt_client/mqtt_client.h"
+#include "application/trip_orchestrator.h"
+#include "infra/constants.h"
+#include "services/mqtt_router.h"
+#include "transport/mqtt_client/mqtt_client.h"
 
 using namespace gateway::transport;
 
@@ -121,4 +124,25 @@ TEST_F(MqttClientTest, SubscribeBeforeStart) {
   MqttClient temp_client{"broker.hivemq.com", 1883, "test_client_id3"};
   temp_client.subscribe("mqtt5/test");
   SUCCEED();
+}
+
+TEST_F(MqttClientTest, SubscribeBeforeStartStillRoutesMessage) {
+  gateway::services::MqttRouter router;
+  gateway::application::TripOrchestrator orchestrator("ORIN_NANO_001");
+  bool fired = false;
+
+  orchestrator.set_callbacks(
+      {.on_trip_init = [&](int64_t, double, double, double, double) {
+        fired = true;
+      }});
+
+  router.on(gateway::constants::VehicleGatewayConstants::kTopicTripInit,
+            [&](const std::string& p) { orchestrator.handle_trip_init(p); });
+
+  router.dispatch(gateway::constants::VehicleGatewayConstants::kTopicTripInit,
+                  R"({"vinNumber":"VIN123","requestId":1,)"
+                  R"("startLong":35.692,"startLat":139.693,)"
+                  R"("endLong":35.688,"endLat":139.694})");
+
+  EXPECT_TRUE(fired) << "Message never reached orchestrator";
 }
