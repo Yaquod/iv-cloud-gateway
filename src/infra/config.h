@@ -18,6 +18,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
 namespace gateway {
 struct Config {
