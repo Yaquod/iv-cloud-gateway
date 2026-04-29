@@ -25,6 +25,7 @@ target_link_libraries(services_lib
         OpenSSL::SSL
         OpenSSL::Crypto
         spdlog::spdlog
+        nlohmann_json::nlohmann_json
 )
 
 target_compile_options(services_lib PRIVATE
