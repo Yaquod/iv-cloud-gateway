@@ -1,30 +1,148 @@
-// //
-// // Created by alaa-hassan on 31‏/10‏/2025.
-// //
-//
-// #include <gtest/gtest.h>
-//
-// #include "../../src/mqtt_client/mqtt_client.h"
-//
-// using namespace cloud_gateway;
-//
-// class MqttClientTest : public ::testing::Test {
-//  protected:
-//   MqttClient client{"broker.hivemq.com", 1883, "boost_mqtt5_test_client"};
-// };
-//
-// TEST_F(MqttClientTest, PublishTest) {
-//   client.start_runner();
-//   client.mqtt_connect();
-//   bool res = client.mqtt_publish("mqtt5/test", "hello");
-//   client.mqtt_disconnect();
-//   EXPECT_TRUE(res);
-// }
-//
-// TEST_F(MqttClientTest, SubscribeTest) {
-//   client.start_runner();
-//   client.mqtt_connect();
-//   bool res = client.mqtt_subscribe("mqtt5/test");
-//   client.mqtt_disconnect();
-//   EXPECT_TRUE(res);
-// }
+/*
+ * Copyright 2026 wafdy
+ * Copyright 2026 Alaa Hassan
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <gtest/gtest.h>
+
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+
+#include "application/trip_orchestrator.h"
+#include "infra/constants.h"
+#include "services/mqtt_router.h"
+#include "transport/mqtt_client/mqtt_client.h"
+
+using namespace gateway::transport;
+
+class MqttClientTest : public ::testing::Test {
+ protected:
+  MqttClient client{"broker.hivemq.com", 1883, "test_client_id"};
+  void SetUp() override { client.start(); }
+  void TearDown() override { client.stop(); }
+};
+
+TEST_F(MqttClientTest, ConnectDisconnect) {
+  // Should connect and disconnect without error
+  client.stop();
+  client.start();
+  client.stop();
+  SUCCEED();
+}
+
+TEST_F(MqttClientTest, PublishSuccess) {
+  std::atomic<bool> called{false};
+  // Wait a bit to ensure connection is established
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  client.publish("mqtt5/test", "hello-mqtt",
+                 [&](bool success, const std::string& msg) {
+                   EXPECT_TRUE(success);
+                   called = true;
+                 });
+  for (int i = 0; i < 50 && !called; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_TRUE(called);
+}
+
+TEST_F(MqttClientTest, SubscribeSuccess) {
+  // Should not throw or log error
+  client.subscribe("mqtt5/test");
+  SUCCEED();
+}
+
+TEST_F(MqttClientTest, MessageArrivalCallback) {
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool received = false;
+  client.set_message_handler(
+      [&](const std::string& topic, const std::string& payload) {
+        std::lock_guard<std::mutex> lock(mtx);
+        received = true;
+        cv.notify_one();
+      });
+  client.subscribe("mqtt5/test");
+  // Wait a bit to ensure subscription is active
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  client.publish("mqtt5/test", "test-payload", nullptr);
+  std::unique_lock<std::mutex> lock(mtx);
+  cv.wait_for(lock, std::chrono::seconds(10), [&] { return received; });
+  EXPECT_TRUE(received);
+}
+
+TEST_F(MqttClientTest, PublishFailureInvalidTopic) {
+  std::atomic<bool> called{false};
+  client.publish("", "payload", [&](bool success, const std::string& msg) {
+    EXPECT_FALSE(success);
+    called = true;
+  });
+  for (int i = 0; i < 20 && !called; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_TRUE(called);
+}
+
+TEST_F(MqttClientTest, SubscribeFailureInvalidTopic) {
+  client.subscribe("");
+  SUCCEED();
+}
+
+TEST_F(MqttClientTest, DoubleStartStop) {
+  client.start();
+  client.start();
+  client.stop();
+  client.stop();
+  SUCCEED();
+}
+
+TEST_F(MqttClientTest, PublishBeforeStart) {
+  MqttClient temp_client{"broker.hivemq.com", 1883, "test_client_id2"};
+  std::atomic<bool> called{false};
+  temp_client.publish("mqtt5/test", "payload",
+                      [&](bool success, const std::string& msg) {
+                        EXPECT_FALSE(success);
+                        called = true;
+                      });
+  for (int i = 0; i < 20 && !called; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_TRUE(called);
+}
+
+TEST_F(MqttClientTest, SubscribeBeforeStart) {
+  MqttClient temp_client{"broker.hivemq.com", 1883, "test_client_id3"};
+  temp_client.subscribe("mqtt5/test");
+  SUCCEED();
+}
+
+TEST_F(MqttClientTest, SubscribeBeforeStartStillRoutesMessage) {
+  gateway::services::MqttRouter router;
+  gateway::application::TripOrchestrator orchestrator("ORIN_NANO_001");
+  bool fired = false;
+
+  orchestrator.set_callbacks(
+      {.on_trip_init = [&](int64_t, double, double, double, double) {
+        fired = true;
+      }});
+
+  router.on(gateway::constants::VehicleGatewayConstants::kTopicTripInit,
+            [&](const std::string& p) { orchestrator.handle_trip_init(p); });
+
+  router.dispatch(gateway::constants::VehicleGatewayConstants::kTopicTripInit,
+                  R"({"vinNumber":"VIN123","requestId":1,)"
+                  R"("startLong":35.692,"startLat":139.693,)"
+                  R"("endLong":35.688,"endLat":139.694})");
+
+  EXPECT_TRUE(fired) << "Message never reached orchestrator";
+}
