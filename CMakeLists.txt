@@ -30,7 +30,7 @@ if(ENABLE_SANITIZERS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Sanitizers.cm
 endif()
 
 find_package(gRPC REQUIRED)
-find_package(Protobuf REQUIRED CONFIG)
+find_package(Protobuf REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
 
