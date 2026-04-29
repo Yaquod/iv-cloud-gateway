@@ -60,8 +60,10 @@ class MqttClient {
   MessageHandler cb_;
   std::atomic<bool> started_{false};
   std::atomic<bool> stopped_{false};
+  std::vector<std::string> pending_topics_;
 
   void arm_receive();
+  void do_subscribe(const std::string& topic);
 };
 
 }  // namespace gateway::transport

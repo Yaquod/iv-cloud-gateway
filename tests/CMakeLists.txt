@@ -3,7 +3,9 @@ file(GLOB_RECURSE UNIT_TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/unit/*_test.cpp
 add_executable(gateway_tests
         test_main.cpp
         ${UNIT_TEST_SOURCES}
+        unit/trip_test.cc
 )
+set_target_properties(gateway_tests PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES)
 
 target_include_directories(gateway_tests
         PRIVATE
@@ -19,6 +21,7 @@ target_link_libraries(gateway_tests
         GTest::gmock
         GTest::gtest_main
 )
+add_definitions(-DJSON_HAS_THREE_WAY_COMPARISON=0)
 
 include(GoogleTest)
 gtest_discover_tests(gateway_tests
