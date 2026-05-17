@@ -161,7 +161,14 @@ class VehicleStreamHandler : public IStreamTag {
     if (ev.has_trip_init_ack()) {
       spdlog::info("[Stream] TripInitAck success={}",
                    ev.trip_init_ack().success());
-    } else if (ev.has_eta()) {
+    }
+    else if(ev.has_trip_park_ack()) {
+      spdlog::info("[Stream] TripParkAck success={}",
+                   ev.trip_park_ack().success());
+    }
+    
+    
+    else if (ev.has_eta()) {
       auto& r = ev.eta();
       nlohmann::json j;
       j["vin_number"] = r.vin_number();

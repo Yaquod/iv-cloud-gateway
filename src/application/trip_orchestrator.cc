@@ -71,4 +71,22 @@ void TripOrchestrator::handle_trip_move(const std::string& payload) {
   }
 }
 
+
+
+void TripOrchestrator::handle_trip_park(const std::string& payload) {
+  auto j = nlohmann::json::parse(payload);
+
+  auto vin = j.at("vinNumber").get<std::string>();
+  auto lon = j.at("longitude").get<double>();
+  auto lat = j.at("latitude").get<double>();
+
+
+  spdlog::info("[Trip] TripPark — vin={} pos=({:.6f},{:.6f})", vin,
+               lat, lon);
+
+  if (trip_callbacks_.on_trip_park) {
+    trip_callbacks_.on_trip_park(vin, lon, lat);
+  }
+}
+
 }  // namespace gateway::application

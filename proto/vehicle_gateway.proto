@@ -34,6 +34,20 @@ message EtaResponse
 }
 
 
+message TripParkRequest
+{
+  string vin_number =1 ;
+  double longitude = 2;
+  double latitude = 3;
+}
+
+message TripParkResponse
+{
+  bool success =1;
+  string message=2;
+}
+
+
 
 
 message StatusRequest
@@ -107,6 +121,8 @@ message GatewayCommand {
   oneof command {
     TripInitRequest trip_init = 1;
     TripMoveRequest trip_move = 2;
+    TripParkRequest trip_park = 3;
+    
   }
 }
 
@@ -114,9 +130,10 @@ message VehicleEvent {
   oneof event {
     TripInitResponse  trip_init_ack  = 1;
     TripMoveResponse  trip_move_ack  = 2;
-    EtaRequest        eta            = 3;
-    StatusRequest     status         = 4;
-    ArriveRequest     arrive         = 5;
-    UpdateVehicleLocationRequest   location       = 6;
+    TripParkResponse   trip_park_ack  =3;
+    EtaRequest        eta            = 4;
+    StatusRequest     status         = 5;
+    ArriveRequest     arrive         = 6;
+    UpdateVehicleLocationRequest   location       = 7;
   }
 }

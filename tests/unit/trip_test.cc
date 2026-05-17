@@ -81,3 +81,46 @@ TEST(TripOrchestratorTest, HandlesTripInitMqttPayload) {
   EXPECT_DOUBLE_EQ(cb_end_lat, 139.69440756809428);
   EXPECT_DOUBLE_EQ(cb_end_lon, 35.68814679007944);
 }
+
+
+
+TEST(TripOrchestratorTest, HandlesTripParkMqttPayload) {
+  std::string vin = "VIN123";
+  TripOrchestrator orchestrator(vin);
+
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool callback_called = false;
+  std::string cb_vin;
+  double cb_lat = 0, cb_lon = 0;
+
+  TripCallbacks callbacks;
+  callbacks.on_trip_park = [&](const std::string& vin_number,
+                                double lon, double lat) {
+    std::lock_guard<std::mutex> lock(mtx);
+    callback_called = true;
+    cb_vin = vin_number;
+    cb_lat = lat;
+    cb_lon = lon;
+    cv.notify_one();
+  };
+  orchestrator.set_callbacks(callbacks);
+
+  // Simulate the MQTT payload
+  nlohmann::json payload_json = {
+      {"vinNumber",  "VIN123"},
+      {"longitude",  35.69247052781142},
+      {"latitude",   139.69333226423214}
+  };
+
+  orchestrator.handle_trip_park(payload_json.dump());
+
+  // Wait for callback
+  std::unique_lock<std::mutex> lock(mtx);
+  cv.wait_for(lock, std::chrono::seconds(1), [&] { return callback_called; });
+
+  EXPECT_TRUE(callback_called);
+  EXPECT_EQ(cb_vin, "VIN123");
+  EXPECT_DOUBLE_EQ(cb_lat, 139.69333226423214);
+  EXPECT_DOUBLE_EQ(cb_lon, 35.69247052781142);
+}

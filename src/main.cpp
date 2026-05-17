@@ -99,7 +99,26 @@ int main() {
              move->set_longitude(lon);
 
              gateway::services::VehicleStreamHandler::push_command(cmd);
-           }});
+           },
+
+
+           .on_trip_park =
+           [](std::string vin_number, double lon, double lat) {
+             spdlog::info("[Gateway] Pushing TripPark vinNumber={} to stream",
+                          vin_number);
+
+             vehicle_gateway::GatewayCommand cmd;
+             auto* park = cmd.mutable_trip_park();
+             park->set_vin_number(vin_number);
+             park->set_latitude(lat);
+             park->set_longitude(lon);
+
+             gateway::services::VehicleStreamHandler::push_command(cmd);
+           }
+          
+          
+          
+          });
   gateway::services::MqttRouter router;
 
   router.on(gateway::constants::VehicleGatewayConstants::kTopicTripInit,
@@ -112,6 +131,13 @@ int main() {
               orchestrator.handle_trip_move(payload);
             });
 
+
+             router.on(gateway::constants::VehicleGatewayConstants::kTopicTripPark,
+            [&orchestrator](const std::string& payload) {
+              orchestrator.handle_trip_park(payload);
+            });
+
+
   mqtt.set_message_handler(
       [&router](const std::string& topic, const std::string& payload) {
         router.dispatch(topic, payload);
@@ -120,6 +146,8 @@ int main() {
   spdlog::info("[DEBUG] calling subscribe BEFORE start");
   mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripInit);
   mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripMove);
+  mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripPark);
+
 
   spdlog::info("[DEBUG] calling start NOW");
   mqtt.start();
