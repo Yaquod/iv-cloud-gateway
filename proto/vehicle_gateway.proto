@@ -48,6 +48,30 @@ message TripParkResponse
 }
 
 
+message OrderUpdateLocationRequest
+{
+  string vin_number = 1;
+}
+
+
+message OrderUpdateLocationResponse
+{
+ bool success =1;
+  string message=2;
+}
+
+
+message OrderUpdateStatusRequest
+{
+   string vin_number = 1;
+}
+
+message OrderUpdateStatusResponse
+{
+   bool success =1;
+  string message=2;
+}
+
 
 
 message StatusRequest
@@ -122,6 +146,8 @@ message GatewayCommand {
     TripInitRequest trip_init = 1;
     TripMoveRequest trip_move = 2;
     TripParkRequest trip_park = 3;
+    OrderUpdateLocationRequest order_update_location = 4;
+    OrderUpdateStatusRequest order_update_status = 5;
     
   }
 }
@@ -131,9 +157,11 @@ message VehicleEvent {
     TripInitResponse  trip_init_ack  = 1;
     TripMoveResponse  trip_move_ack  = 2;
     TripParkResponse   trip_park_ack  =3;
-    EtaRequest        eta            = 4;
-    StatusRequest     status         = 5;
-    ArriveRequest     arrive         = 6;
-    UpdateVehicleLocationRequest   location       = 7;
+    OrderUpdateLocationResponse order_update_location_ack = 4;
+    OrderUpdateStatusResponse   order_update_status_ack = 5;
+    EtaRequest        eta            = 6;
+    StatusRequest     status         = 7;
+    ArriveRequest     arrive         = 8;
+    UpdateVehicleLocationRequest   location       = 9;
   }
 }

@@ -166,6 +166,14 @@ class VehicleStreamHandler : public IStreamTag {
       spdlog::info("[Stream] TripParkAck success={}",
                    ev.trip_park_ack().success());
     }
+    else if(ev.has_order_update_location_ack()) {
+      spdlog::info("[Stream] OrderUpdateLocationAck success={}",
+                   ev.order_update_location_ack().success());
+    }
+     else if(ev.has_order_update_status_ack()) {
+      spdlog::info("[Stream] OrderUpdateStatusAck success={}",
+                   ev.order_update_status_ack().success());
+    }
     
     
     else if (ev.has_eta()) {

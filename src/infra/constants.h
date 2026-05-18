@@ -30,6 +30,9 @@ inline const std::string kTopicTripStatus = "topic/trip/status";
 inline const std::string kTopicTripArrive = "topic/trip/arrive";
 inline const std::string kTopicUpdateLocation = "topic/update_location";
 inline const std::string kTopicTripPark = "topic/trip/park";
+inline const std::string kTopicOrderUpdateLocation = "topic/order/update_location";
+inline const std::string kTopicOrderUpdateStatus = "topic/order/update_status";
+
 
 inline const std::string kBaseUrl = "http://localhost:8000";
 inline const std::string kSignupUrl = kBaseUrl + "/api/auth/admin/signup";

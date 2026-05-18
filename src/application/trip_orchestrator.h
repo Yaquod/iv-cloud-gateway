@@ -38,6 +38,19 @@ struct TripCallbacks {
   // TripPark received from backend
   // Vehicle should call autoware->park() then report park status.
   std::function<void(std::string vin_number, double lon, double lat)> on_trip_park;
+
+
+
+  // TripOrderUpdateLocation received from backend
+  // Vehicle should call autoware->update_location() then report park status.
+  std::function<void(std::string vin_number)> on_order_update_location;
+
+
+
+
+  // TripOrderUpdateStatus received from backend
+  // Vehicle should call autoware->update_status() then report status.
+  std::function<void(std::string vin_number)> on_order_update_status;
 };
 
 class TripOrchestrator {
@@ -69,6 +82,25 @@ class TripOrchestrator {
    * @param payload MQTT Payload sent.
    */
   void handle_trip_park(const std::string& payload);
+
+
+   /**
+   * @brief Called by MqttRouter when topic/trip/order/update_location arrives. Expected payload
+   * keys: vinNumber Stores the server-assigned
+   * @param payload MQTT Payload sent.
+   */
+  void handle_order_update_location(const std::string& payload);
+
+
+ /**
+   * @brief Called by MqttRouter when topic/trip/order/update_status arrives. Expected payload
+   * keys: vinNumber Stores the server-assigned
+   * @param payload MQTT Payload sent.
+   */
+  void handle_order_update_status(const std::string& payload);
+
+
+
 
 
   int64_t active_trip_id() const { return trip_id_.load(); }

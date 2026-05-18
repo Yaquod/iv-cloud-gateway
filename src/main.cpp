@@ -114,6 +114,32 @@ int main() {
              park->set_longitude(lon);
 
              gateway::services::VehicleStreamHandler::push_command(cmd);
+           },
+
+
+            .on_order_update_location =
+           [](std::string vin_number) {
+             spdlog::info("[Gateway] Pushing OrderUpdateLocation vinNumber={} to stream",
+                          vin_number);
+
+             vehicle_gateway::GatewayCommand cmd;
+             auto* update_location = cmd.mutable_order_update_location();
+             update_location->set_vin_number(vin_number);
+           
+             gateway::services::VehicleStreamHandler::push_command(cmd);
+           },
+
+
+             .on_order_update_status =
+           [](std::string vin_number) {
+             spdlog::info("[Gateway] Pushing OrderUpdateStatus vinNumber={} to stream",
+                          vin_number);
+
+             vehicle_gateway::GatewayCommand cmd;
+             auto* update_status = cmd.mutable_order_update_status();
+             update_status->set_vin_number(vin_number);
+           
+             gateway::services::VehicleStreamHandler::push_command(cmd);
            }
           
           
@@ -138,6 +164,20 @@ int main() {
             });
 
 
+
+             router.on(gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateLocation,
+            [&orchestrator](const std::string& payload) {
+              orchestrator.handle_order_update_location(payload);
+            });
+
+
+
+             router.on(gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateStatus,
+            [&orchestrator](const std::string& payload) {
+              orchestrator.handle_order_update_status(payload);
+            });
+
+
   mqtt.set_message_handler(
       [&router](const std::string& topic, const std::string& payload) {
         router.dispatch(topic, payload);
@@ -147,6 +187,9 @@ int main() {
   mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripInit);
   mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripMove);
   mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripPark);
+  mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateLocation);
+  mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateStatus);
+
 
 
   spdlog::info("[DEBUG] calling start NOW");

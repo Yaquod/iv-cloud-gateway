@@ -124,3 +124,65 @@ TEST(TripOrchestratorTest, HandlesTripParkMqttPayload) {
   EXPECT_DOUBLE_EQ(cb_lat, 139.69333226423214);
   EXPECT_DOUBLE_EQ(cb_lon, 35.69247052781142);
 }
+
+
+
+
+
+
+
+
+
+TEST(TripOrchestratorTest, HandlesOrderUpdateLocationPayload) {
+  TripOrchestrator orchestrator("VIN123");
+
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool callback_called = false;
+  std::string cb_vin;
+
+  TripCallbacks callbacks;
+  callbacks.on_order_update_location = [&](const std::string& vin_number) {
+    std::lock_guard<std::mutex> lock(mtx);
+    callback_called = true;
+    cb_vin = vin_number;
+    cv.notify_one();
+  };
+  orchestrator.set_callbacks(callbacks);
+
+  nlohmann::json payload = {{"vinNumber", "VIN123"}};
+  orchestrator.handle_order_update_location(payload.dump());
+
+  std::unique_lock<std::mutex> lock(mtx);
+  cv.wait_for(lock, std::chrono::seconds(1), [&] { return callback_called; });
+
+  EXPECT_TRUE(callback_called);
+  EXPECT_EQ(cb_vin, "VIN123");
+}
+
+TEST(TripOrchestratorTest, HandlesOrderUpdateStatusPayload) {
+  TripOrchestrator orchestrator("VIN123");
+
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool callback_called = false;
+  std::string cb_vin;
+
+  TripCallbacks callbacks;
+  callbacks.on_order_update_status = [&](const std::string& vin_number) {
+    std::lock_guard<std::mutex> lock(mtx);
+    callback_called = true;
+    cb_vin = vin_number;
+    cv.notify_one();
+  };
+  orchestrator.set_callbacks(callbacks);
+
+  nlohmann::json payload = {{"vinNumber", "VIN123"}};
+  orchestrator.handle_order_update_status(payload.dump());
+
+  std::unique_lock<std::mutex> lock(mtx);
+  cv.wait_for(lock, std::chrono::seconds(1), [&] { return callback_called; });
+
+  EXPECT_TRUE(callback_called);
+  EXPECT_EQ(cb_vin, "VIN123");
+}
