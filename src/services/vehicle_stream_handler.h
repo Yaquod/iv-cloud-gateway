@@ -178,6 +178,8 @@ class VehicleStreamHandler : public IStreamTag {
     
     else if (ev.has_eta()) {
       auto& r = ev.eta();
+        spdlog::info("[Stream] ETA received from Autoware: vin={} reqId={} time={}",  // ADD
+                 r.vin_number(), r.request_id(), r.time());
       nlohmann::json j;
       j["vin_number"] = r.vin_number();
       j["request_id"] = r.request_id();
@@ -186,6 +188,8 @@ class VehicleStreamHandler : public IStreamTag {
       publish_(constants::VehicleGatewayConstants::kTopicTripEta, j.dump(),
                [](bool ok, std::string e) {
                  if (!ok) spdlog::error("[Stream] ETA failed: {}", e);
+                                else spdlog::info("[Stream] ETA published to MQTT successfully");  // ADD
+
                });
     } else if (ev.has_status()) {
       auto& r = ev.status();
@@ -199,6 +203,7 @@ class VehicleStreamHandler : public IStreamTag {
                });
     } else if (ev.has_arrive()) {
       auto& r = ev.arrive();
+      spdlog::info("[Stream] arrive received from Autoware");
       nlohmann::json j;
       j["vinNumber"] = r.vin_number();
       j["tripId"] = r.trip_id();

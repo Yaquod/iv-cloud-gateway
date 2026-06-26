@@ -37,6 +37,26 @@ bool AuthService::setup() {
   if (login()) {
     return true;
   }
+
+   spdlog::info("[AuthService] login failed must signup first");
+
+   if(!signup()){
+      spdlog::error("[AuthService] signup failed");
+      return false;
+   }
+
+   if(!verify_code()){
+      spdlog::error("[AuthService] verify_code failed");
+      return false;
+   }
+
+
+   if (login()) {
+    return true;
+  }
+
+  spdlog::error("[AuthService] login failed after signup and verify_code");
+
   return false;
 }
 
@@ -65,6 +85,20 @@ bool AuthService::create_vehicle() {
   if (resp.status_code == 201) {
     spdlog::info("[AuthService] vehicle created successfully");
     vehicle_registered_ = true;
+    
+    try{
+
+        auto j = nlohmann::json::parse(resp.body);
+        vechile_api_key_ = j.at("data").at("apiKey").get<std::string>();
+        vechile_api_secret_ = j.at("data").at("apiSecret").get<std::string>();
+        spdlog::info("[AuthService] captured vehicle apiKey/apiSecret");
+
+    }
+    catch(const std::exception& e){
+        spdlog::error("[AuthService] failed to parse apiKey/apiSecret: {}", e.what());
+        return false;
+    }
+
     return true;
   }
 
@@ -86,7 +120,23 @@ bool AuthService::create_vehicle() {
     auto retry =
         http_client_.Post(constants::VehicleGatewayConstants::kCreateVehicleUrl,
                           auth_headers_, body.dump());
-    if (retry.status_code == 201 || retry.status_code == 400) {
+    if (retry.status_code == 201 ) {
+      vehicle_registered_ = true;
+        try{
+
+        auto j = nlohmann::json::parse(resp.body);
+        vechile_api_key_ = j.at("data").at("apiKey").get<std::string>();
+        vechile_api_secret_ = j.at("data").at("apiSecret").get<std::string>();
+        spdlog::info("[AuthService] captured vehicle apiKey/apiSecret");
+
+    }
+    catch(const std::exception& e){
+        spdlog::error("[AuthService] failed to parse apiKey/apiSecret: {}", e.what());
+        return false;
+    }
+      return true;
+    }
+    else if (retry.status_code == 400) {
       vehicle_registered_ = true;
       return true;
     }
@@ -142,5 +192,119 @@ void AuthService::ensure_auth_headers() {
   auth_headers_ = json_headers_;
   auth_headers_["Authorization"] = "Bearer " + token_;
 }
+
+
+
+bool AuthService::vechile_login(){
+
+  if(vechile_authenticated_){
+    spdlog::info("[AuthService] vehicle already authenticated");
+    return true;
+  }
+
+  if(vechile_api_key_.empty() || vechile_api_secret_.empty()){
+    spdlog::warn("[AuthService] vehicle apiKey/apiSecret not available for login");
+    return false;
+  }
+
+  try{
+    nlohmann::json body = {{"apiKey", vechile_api_key_},
+                           {"apiSecret", vechile_api_secret_}};
+
+     auto resp = http_client_.Post(constants::VehicleGatewayConstants::kVehicleLoginUrl,
+                                  json_headers_, body.dump());
+                                  
+    if (!resp.success || resp.body.empty()) {
+      spdlog::debug("[AuthService] vehicle login failed: {}", resp.error_message);
+      return false;
+    }
+    
+     auto j = nlohmann::json::parse(resp.body);
+    if (!j.value("success", false)) return false;
+    
+
+    vechile_authenticated_ = true;
+    spdlog::info("[AuthService] vehicle login successful");
+    return true;
+
+
+  }
+  catch(const std::exception& e){
+    spdlog::error("[AuthService] vehicle login exception: {}", e.what());
+    return false;
+  }
+}
+
+
+bool AuthService::verify_code(){
+  
+try{
+    
+  nlohmann::json body = {{"email", config_.admin_email},
+                           {"code", config_.verify_code}};
+
+     auto resp = http_client_.Post(
+        constants::VehicleGatewayConstants::kVerifyUrl, json_headers_,
+        body.dump());
+
+      if (resp.status_code == 200) {
+      spdlog::info("[AuthService] admin verified successfully");
+      return true;
+    }
+
+     spdlog::error("[AuthService] verify_code failed with status {}: {}",
+                  resp.status_code, resp.body);
+    return false;
+
+
+
+}
+catch(const std::exception& e){
+    spdlog::error("[AuthService] verify_code exception: {}", e.what());
+    return false;
+  }
+
+}
+
+
+
+bool AuthService::signup(){
+try{
+       nlohmann::json body = {
+        {"email", config_.admin_email},
+        {"password", config_.admin_password},
+        {"firstName", config_.admin_first_name},
+        {"lastName", config_.admin_last_name},
+        {"phoneNumber", config_.admin_phone}};
+
+
+        auto resp = http_client_.Post(
+        constants::VehicleGatewayConstants::kSignupUrl, json_headers_,
+        body.dump());
+
+       if(resp.status_code == 201){
+            spdlog::info("[AuthService] signup successful");
+            return true;
+       }
+       
+       
+       if (resp.status_code == 409){
+            spdlog::info("[AuthService] admin already exists");
+            return true;
+       }
+
+       spdlog::error("[AuthService] signup failed with status {}: {}",
+                  resp.status_code, resp.body);
+    return false;
+    
+}
+catch(const std::exception& e){
+    spdlog::error("[AuthService] signup exception: {}", e.what());
+    return false;
+  }
+
+}
+
+
 
 }  // namespace gateway::services

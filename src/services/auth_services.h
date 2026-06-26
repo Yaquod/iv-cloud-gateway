@@ -28,6 +28,9 @@ class AuthService {
                        const Config& config);
   bool setup();
   bool create_vehicle();
+  bool vechile_login();
+  bool verify_code();
+  bool signup();
 
  private:
   gateway::transport::HttpClient& http_client_;
@@ -35,12 +38,17 @@ class AuthService {
   std::string token_;
   bool vehicle_registered_{false};
 
+  std::string vechile_api_key_;
+  std::string vechile_api_secret_;
+  bool vechile_authenticated_{false};
+
   std::map<std::string, std::string> json_headers_;
   std::map<std::string, std::string> auth_headers_;
 
   bool login();
   bool signup_verify();
   void ensure_auth_headers();
+  void ensure_vehicle_auth_headers();
 };
 }  // namespace gateway::services
 #endif  // VEHICLECLOUDGATEWAY_AUTH_SERVICES_H

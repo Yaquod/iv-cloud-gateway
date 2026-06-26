@@ -30,10 +30,10 @@ struct Config {
   uint16_t mqtt_port = 1883;
   std::string mqtt_client_id = "vehicle_gateway_client";
 
-  std::string autoware_grpc_addr = "192.168.64.7:50051";
+  std::string autoware_grpc_addr = "127.0.0.1:50051";
 
   // gRPC
-  std::string grpc_listen = "192.168.64.7:50051";
+  std::string grpc_listen = "0.0.0.0:50051";
 
   // Auth / HTTP backend
   std::string base_url = "http://localhost:8000";
@@ -50,5 +50,12 @@ struct Config {
   std::string car_company = "";
   std::string model = "";
   int seat_no = 4;
+
+
+  // Vechile fixed start
+  double start_lat = 35.68855194431519;
+  double start_lon = 139.69142711058254;
+
+
 };
 }  // namespace gateway

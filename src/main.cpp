@@ -57,7 +57,7 @@ int main() {
   cfg.admin_first_name = "Admin";
   cfg.admin_last_name = "User";
   cfg.admin_phone = "+1234567890";
-  cfg.verify_code = "123456";
+  cfg.verify_code = "111111";
   cfg.plate_no = "ABC-1234";
   cfg.color = "white";
   cfg.car_company = "Toyota";
@@ -202,6 +202,29 @@ int main() {
     spdlog::warn("[Gateway] running without authentication");
   }
   auth.create_vehicle();
+  if(auth.vechile_login()) {
+
+     nlohmann::json start_loc = {
+    {"vinNumber", cfg.vin_number},
+    {"latitude", cfg.start_lat},
+    {"longitude", cfg.start_lon}
+};
+
+mqtt.publish(
+    gateway::constants::VehicleGatewayConstants::kTopicUpdateLocation,
+    start_loc.dump(),
+    [](bool ok, std::string e) {
+      if (ok) {
+        spdlog::info("[Gateway] vehicle location published");
+      } else {
+        spdlog::error("[Gateway] failed to publish location: {}", e);
+      }
+    });
+
+  }
+
+ 
+
 
   gateway::services::GrpcServer grpc_server(
       cfg.grpc_listen,

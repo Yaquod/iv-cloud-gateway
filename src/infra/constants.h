@@ -30,8 +30,8 @@ inline const std::string kTopicTripStatus = "topic/trip/status";
 inline const std::string kTopicTripArrive = "topic/trip/arrive";
 inline const std::string kTopicUpdateLocation = "topic/update_location";
 inline const std::string kTopicTripPark = "topic/trip/park";
-inline const std::string kTopicOrderUpdateLocation = "topic/order/update_location";
-inline const std::string kTopicOrderUpdateStatus = "topic/order/update_status";
+inline const std::string kTopicOrderUpdateLocation = "topic/update_location/order";
+inline const std::string kTopicOrderUpdateStatus = "topic/update_status/order";
 
 
 inline const std::string kBaseUrl = "http://localhost:8000";
@@ -39,6 +39,8 @@ inline const std::string kSignupUrl = kBaseUrl + "/api/auth/admin/signup";
 inline const std::string kVerifyUrl = kBaseUrl + "/api/auth/verify-code";
 inline const std::string kLoginUrl = kBaseUrl + "/api/auth/login";
 inline const std::string kCreateVehicleUrl = kBaseUrl + "/api/vehicles";
+inline const std::string kVehicleLoginUrl = kBaseUrl + "/api/auth/vehicle/login";
+
 
 inline const std::string kGrpcListenAddr = "0.0.0.0:50051";
 
