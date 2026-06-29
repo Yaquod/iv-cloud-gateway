@@ -31,6 +31,9 @@ class AuthService {
   bool vechile_login();
   bool verify_code();
   bool signup();
+  const std::string& vehicle_access_token() const {
+    return vechile_access_token_;
+  }
 
  private:
   gateway::transport::HttpClient& http_client_;
@@ -40,6 +43,7 @@ class AuthService {
 
   std::string vechile_api_key_;
   std::string vechile_api_secret_;
+  std::string vechile_access_token_;
   bool vechile_authenticated_{false};
 
   std::map<std::string, std::string> json_headers_;

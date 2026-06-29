@@ -51,11 +51,8 @@ struct Config {
   std::string model = "";
   int seat_no = 4;
 
-
   // Vechile fixed start
-  double start_lat = 35.68855194431519;
-  double start_lon = 139.69142711058254;
-
-
+  double start_lat;
+  double start_lon;
 };
 }  // namespace gateway

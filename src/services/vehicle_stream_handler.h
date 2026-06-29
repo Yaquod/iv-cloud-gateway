@@ -161,25 +161,22 @@ class VehicleStreamHandler : public IStreamTag {
     if (ev.has_trip_init_ack()) {
       spdlog::info("[Stream] TripInitAck success={}",
                    ev.trip_init_ack().success());
-    }
-    else if(ev.has_trip_park_ack()) {
+    } else if (ev.has_trip_park_ack()) {
       spdlog::info("[Stream] TripParkAck success={}",
                    ev.trip_park_ack().success());
-    }
-    else if(ev.has_order_update_location_ack()) {
+    } else if (ev.has_order_update_location_ack()) {
       spdlog::info("[Stream] OrderUpdateLocationAck success={}",
                    ev.order_update_location_ack().success());
-    }
-     else if(ev.has_order_update_status_ack()) {
+    } else if (ev.has_order_update_status_ack()) {
       spdlog::info("[Stream] OrderUpdateStatusAck success={}",
                    ev.order_update_status_ack().success());
     }
-    
-    
+
     else if (ev.has_eta()) {
       auto& r = ev.eta();
-        spdlog::info("[Stream] ETA received from Autoware: vin={} reqId={} time={}",  // ADD
-                 r.vin_number(), r.request_id(), r.time());
+      spdlog::info(
+          "[Stream] ETA received from Autoware: vin={} reqId={} time={}",  // ADD
+          r.vin_number(), r.request_id(), r.time());
       nlohmann::json j;
       j["vin_number"] = r.vin_number();
       j["request_id"] = r.request_id();
@@ -187,9 +184,11 @@ class VehicleStreamHandler : public IStreamTag {
       j["estimated_time"] = r.time();
       publish_(constants::VehicleGatewayConstants::kTopicTripEta, j.dump(),
                [](bool ok, std::string e) {
-                 if (!ok) spdlog::error("[Stream] ETA failed: {}", e);
-                                else spdlog::info("[Stream] ETA published to MQTT successfully");  // ADD
-
+                 if (!ok)
+                   spdlog::error("[Stream] ETA failed: {}", e);
+                 else
+                   spdlog::info(
+                       "[Stream] ETA published to MQTT successfully");  // ADD
                });
     } else if (ev.has_status()) {
       auto& r = ev.status();
