@@ -16,9 +16,22 @@
 
 #include "auth_services.h"
 
+#include <fstream>
 #include <nlohmann/json.hpp>
 
 #include "infra/constants.h"
+
+
+
+namespace {
+
+const std::filesystem::path kCredentialsPath =
+    std::filesystem::path(CREDENTIALS_DIR) /
+    "vehicle_credentials.json";
+
+}  
+
+
 
 namespace gateway::services {
 
@@ -59,7 +72,10 @@ bool AuthService::setup() {
   return false;
 }
 
-bool AuthService::create_vehicle() {
+bool AuthService::create_vehicle(bool retry_after_login,
+                                 bool retry_after_network) {
+
+                                  
   if (vehicle_registered_) {
     spdlog::info("[AuthService] vehicle already registered");
     return true;
@@ -81,6 +97,7 @@ bool AuthService::create_vehicle() {
       http_client_.Post(constants::VehicleGatewayConstants::kCreateVehicleUrl,
                         auth_headers_, body.dump());
 
+  // vechile created successfully = 201
   if (resp.status_code == 201) {
     spdlog::info("[AuthService] vehicle created successfully");
     vehicle_registered_ = true;
@@ -89,6 +106,7 @@ bool AuthService::create_vehicle() {
       auto j = nlohmann::json::parse(resp.body);
       vechile_api_key_ = j.at("data").at("apiKey").get<std::string>();
       vechile_api_secret_ = j.at("data").at("apiSecret").get<std::string>();
+      save_vehicle_credentials();
       spdlog::info("[AuthService] captured vehicle apiKey/apiSecret");
 
     } catch (const std::exception& e) {
@@ -100,46 +118,35 @@ bool AuthService::create_vehicle() {
     return true;
   }
 
+  // vechile alreay exists = 409
   if (resp.status_code == 409) {
     spdlog::info("[AuthService] vehicle already exists");
+    if (!load_vehicle_credentials()) {
+      spdlog::error(
+          "[AuthService] vehicle exists but credentials file not found");
+      return false;
+    }
     vehicle_registered_ = true;
     return true;
   }
 
+  // admin token expired = 401
   if (resp.status_code == 401) {
+    if (retry_after_login) {
+      spdlog::error(
+          "[AuthService] create_vehicle still returned 401 after re-login");
+      return false;
+    }
+
     spdlog::info("[AuthService] token expired — re-logging in");
     token_.clear();
     if (!login()) {
       spdlog::error("[AuthService] re-login failed — cannot register vehicle");
       return false;
     }
-    // Retry once
-    ensure_auth_headers();
-    auto retry =
-        http_client_.Post(constants::VehicleGatewayConstants::kCreateVehicleUrl,
-                          auth_headers_, body.dump());
-    if (retry.status_code == 201) {
-      vehicle_registered_ = true;
-      try {
-        auto j = nlohmann::json::parse(retry.body);
-        vechile_api_key_ = j.at("data").at("apiKey").get<std::string>();
-        vechile_api_secret_ = j.at("data").at("apiSecret").get<std::string>();
-        spdlog::info("[AuthService] captured vehicle apiKey/apiSecret");
 
-      } catch (const std::exception& e) {
-        spdlog::error("[AuthService] failed to parse apiKey/apiSecret: {}",
-                      e.what());
-        return false;
-      }
-      return true;
-    } else if (retry.status_code == 409) {
-      vehicle_registered_ = true;
-      return true;
-    }
-    spdlog::error(
-        "[AuthService] vehicle registration failed after re-login: {}",
-        retry.status_code);
-    return false;
+    // Retry once after re-login
+    return create_vehicle(true);
   }
 
   if (!resp.success) {
@@ -147,37 +154,20 @@ bool AuthService::create_vehicle() {
         "[AuthService] vehicle registration failed due to connectivity: {}",
         resp.error_message);
 
+    if (retry_after_network) {
+      spdlog::error("[AuthService] network retry failed");
+      return false;
+    }
+
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    auto retry =
-        http_client_.Post(constants::VehicleGatewayConstants::kCreateVehicleUrl,
-                          auth_headers_, body.dump());
 
-    if (retry.status_code == 201) {
-      vehicle_registered_ = true;
-      try {
-        auto j = nlohmann::json::parse(retry.body);
-        vechile_api_key_ = j.at("data").at("apiKey").get<std::string>();
-        vechile_api_secret_ = j.at("data").at("apiSecret").get<std::string>();
-        return true;
-      } catch (const std::exception& e) {
-        spdlog::error(
-            "[AuthService] failed to parse apiKey/apiSecret on retry: {}",
-            e.what());
-        return false;
-      }
-    }
-    if (retry.status_code == 409) {
-      vehicle_registered_ = true;
-      return true;
-    }
-    spdlog::error("[AuthService] vehicle registration retry also failed: {}",
-                  retry.status_code);
-
-    return false;
+    // retry once after network failure
+    return create_vehicle(retry_after_login, true);
   }
 
-  spdlog::error("[AuthService] unexpected status {} from create_vehicle",
+  spdlog::error("[AuthService] create_vehicle failed with status {}",
                 resp.status_code);
+
   return false;
 }
 
@@ -223,9 +213,12 @@ bool AuthService::vechile_login() {
   }
 
   if (vechile_api_key_.empty() || vechile_api_secret_.empty()) {
-    spdlog::warn(
-        "[AuthService] vehicle apiKey/apiSecret not available for login");
-    return false;
+    spdlog::info("[AuthService] no credentials");
+    if (!load_vehicle_credentials()) {
+      spdlog::warn(
+          "[AuthService] vehicle apiKey/apiSecret not available for login");
+      return false;
+    }
   }
 
   try {
@@ -247,6 +240,8 @@ bool AuthService::vechile_login() {
 
     vechile_access_token_ = j.at("data").at("accessToken").get<std::string>();
     spdlog::info("[AuthService] vehicle accessToken captured");
+
+save_vehicle_credentials();
 
     vechile_authenticated_ = true;
     spdlog::info("[AuthService] vehicle login successful");
@@ -310,6 +305,65 @@ bool AuthService::signup() {
 
   } catch (const std::exception& e) {
     spdlog::error("[AuthService] signup exception: {}", e.what());
+    return false;
+  }
+}
+
+bool AuthService::save_vehicle_credentials() {
+
+  
+  try {
+    std::filesystem::path path(kCredentialsPath);
+    if (path.has_parent_path()) {
+      std::filesystem::create_directories(path.parent_path());
+    }
+
+    spdlog::info("Saving credentials to the file");
+
+    nlohmann::json j = {{"apiKey", vechile_api_key_},
+                        {"apiSecret", vechile_api_secret_},
+                        {"accessToken", vechile_access_token_}
+                      };
+
+    std::ofstream file(kCredentialsPath);
+    if (!file.is_open()) {
+      spdlog::error(
+          "[AuthService] cannot open credentials file for writing");
+      return false;
+    }
+
+    file << j.dump(2);
+    spdlog::info("[AuthService] vehicle credentials saved to the file");
+    return true;
+
+  } catch (const std::exception& e) {
+    spdlog::error("[AuthService] save_vehicle_credentials exception: {}",
+                  e.what());
+    return false;
+  }
+}
+
+bool AuthService::load_vehicle_credentials() {
+  try {
+    std::ifstream file(kCredentialsPath);
+    if (!file.is_open()) {
+      spdlog::info("[AuthService] no credentials file found "
+           );
+      return false;
+    }
+
+    auto j = nlohmann::json::parse(file);
+    vechile_api_key_ = j.at("apiKey").get<std::string>();
+    vechile_api_secret_ = j.at("apiSecret").get<std::string>();
+    vechile_access_token_ =
+    j.value("accessToken", "");
+
+    spdlog::info("[AuthService] vehicle credentials loaded from the file"
+);
+    return true;
+
+  } catch (const std::exception& e) {
+    spdlog::warn("[AuthService] load_vehicle_credentials failed: {}", e.what());
     return false;
   }
 }

@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+a7ea722bbe167979b578b28868fd8f8a proto/vehicle_gateway.pb.cc

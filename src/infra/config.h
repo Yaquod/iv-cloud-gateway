@@ -16,7 +16,6 @@
  */
 
 #pragma once
-
 #include <cstdint>
 #include <string>
 
@@ -24,6 +23,9 @@ namespace gateway {
 struct Config {
   // Vehicle identity
   std::string vin_number = "ORIN_NANO_001";
+
+
+
 
   // MQTT
   std::string mqtt_broker = "localhost";
