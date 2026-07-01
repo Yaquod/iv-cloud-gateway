@@ -21,17 +21,12 @@
 
 #include "infra/constants.h"
 
-
-
 namespace {
 
 const std::filesystem::path kCredentialsPath =
-    std::filesystem::path(CREDENTIALS_DIR) /
-    "vehicle_credentials.json";
+    std::filesystem::path(CREDENTIALS_DIR) / "vehicle_credentials.json";
 
-}  
-
-
+}
 
 namespace gateway::services {
 
@@ -74,8 +69,6 @@ bool AuthService::setup() {
 
 bool AuthService::create_vehicle(bool retry_after_login,
                                  bool retry_after_network) {
-
-                                  
   if (vehicle_registered_) {
     spdlog::info("[AuthService] vehicle already registered");
     return true;
@@ -241,7 +234,7 @@ bool AuthService::vechile_login() {
     vechile_access_token_ = j.at("data").at("accessToken").get<std::string>();
     spdlog::info("[AuthService] vehicle accessToken captured");
 
-save_vehicle_credentials();
+    save_vehicle_credentials();
 
     vechile_authenticated_ = true;
     spdlog::info("[AuthService] vehicle login successful");
@@ -310,8 +303,6 @@ bool AuthService::signup() {
 }
 
 bool AuthService::save_vehicle_credentials() {
-
-  
   try {
     std::filesystem::path path(kCredentialsPath);
     if (path.has_parent_path()) {
@@ -322,13 +313,11 @@ bool AuthService::save_vehicle_credentials() {
 
     nlohmann::json j = {{"apiKey", vechile_api_key_},
                         {"apiSecret", vechile_api_secret_},
-                        {"accessToken", vechile_access_token_}
-                      };
+                        {"accessToken", vechile_access_token_}};
 
     std::ofstream file(kCredentialsPath);
     if (!file.is_open()) {
-      spdlog::error(
-          "[AuthService] cannot open credentials file for writing");
+      spdlog::error("[AuthService] cannot open credentials file for writing");
       return false;
     }
 
@@ -347,19 +336,16 @@ bool AuthService::load_vehicle_credentials() {
   try {
     std::ifstream file(kCredentialsPath);
     if (!file.is_open()) {
-      spdlog::info("[AuthService] no credentials file found "
-           );
+      spdlog::info("[AuthService] no credentials file found ");
       return false;
     }
 
     auto j = nlohmann::json::parse(file);
     vechile_api_key_ = j.at("apiKey").get<std::string>();
     vechile_api_secret_ = j.at("apiSecret").get<std::string>();
-    vechile_access_token_ =
-    j.value("accessToken", "");
+    vechile_access_token_ = j.value("accessToken", "");
 
-    spdlog::info("[AuthService] vehicle credentials loaded from the file"
-);
+    spdlog::info("[AuthService] vehicle credentials loaded from the file");
     return true;
 
   } catch (const std::exception& e) {

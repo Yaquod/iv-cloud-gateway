@@ -24,9 +24,6 @@ struct Config {
   // Vehicle identity
   std::string vin_number = "ORIN_NANO_001";
 
-
-
-
   // MQTT
   std::string mqtt_broker = "localhost";
   uint16_t mqtt_port = 1883;

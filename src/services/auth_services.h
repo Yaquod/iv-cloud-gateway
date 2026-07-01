@@ -27,7 +27,8 @@ class AuthService {
   explicit AuthService(gateway::transport::HttpClient& http_client,
                        const Config& config);
   bool setup();
-  bool create_vehicle(bool retry_after_login = false , bool retry_after_network = false);
+  bool create_vehicle(bool retry_after_login = false,
+                      bool retry_after_network = false);
   bool vechile_login();
   bool verify_code();
   bool signup();
