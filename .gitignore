@@ -18,4 +18,4 @@ Testing/
 *.log
 
 config/gateway.local.yaml
-credentials/vehicle_credentials.json
+credentials/vehicle_credentials.json    
