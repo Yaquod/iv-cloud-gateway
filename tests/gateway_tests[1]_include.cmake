@@ -1,5 +1,0 @@
-if(EXISTS "/home/alaa-hassan/Desktop/yaqoud_project/gateway/iv-cloud-gateway/tests/gateway_tests[1]_tests.cmake")
-  include("/home/alaa-hassan/Desktop/yaqoud_project/gateway/iv-cloud-gateway/tests/gateway_tests[1]_tests.cmake")
-else()
-  add_test(gateway_tests_NOT_BUILT gateway_tests_NOT_BUILT)
-endif()
