@@ -195,8 +195,10 @@ namespace vehicle_gateway {
 
 // ===================================================================
 
-class EtaRequest PROTOBUF_FINAL : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.EtaRequest)
-                                                                           */
+class EtaRequest PROTOBUF_FINAL
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.EtaRequest)
+                   */
 {
  public:
   inline EtaRequest() : EtaRequest(nullptr) {};
@@ -390,8 +392,10 @@ class EtaRequest PROTOBUF_FINAL : public ::PROTOBUF_NAMESPACE_ID::Message /* @@p
 };
 // -------------------------------------------------------------------
 
-class EtaResponse PROTOBUF_FINAL : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.EtaResponse)
-                                                                            */
+class EtaResponse PROTOBUF_FINAL
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.EtaResponse)
+                   */
 {
  public:
   inline EtaResponse() : EtaResponse(nullptr) {};
@@ -563,8 +567,9 @@ class EtaResponse PROTOBUF_FINAL : public ::PROTOBUF_NAMESPACE_ID::Message /* @@
 // -------------------------------------------------------------------
 
 class TripParkRequest PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripParkRequest)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripParkRequest)
+                   */
 {
  public:
   inline TripParkRequest() : TripParkRequest(nullptr) {};
@@ -748,8 +753,9 @@ class TripParkRequest PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class TripParkResponse PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripParkResponse)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripParkResponse)
+                   */
 {
  public:
   inline TripParkResponse() : TripParkResponse(nullptr) {};
@@ -921,8 +927,9 @@ class TripParkResponse PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class OrderUpdateLocationRequest PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.OrderUpdateLocationRequest)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.OrderUpdateLocationRequest)
+                   */
 {
  public:
   inline OrderUpdateLocationRequest() : OrderUpdateLocationRequest(nullptr) {};
@@ -1089,8 +1096,9 @@ class OrderUpdateLocationRequest PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class OrderUpdateLocationResponse PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.OrderUpdateLocationResponse)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.OrderUpdateLocationResponse)
+                   */
 {
  public:
   inline OrderUpdateLocationResponse()
@@ -1270,8 +1278,9 @@ class OrderUpdateLocationResponse PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class OrderUpdateStatusRequest PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.OrderUpdateStatusRequest)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.OrderUpdateStatusRequest)
+                   */
 {
  public:
   inline OrderUpdateStatusRequest() : OrderUpdateStatusRequest(nullptr) {};
@@ -1437,8 +1446,9 @@ class OrderUpdateStatusRequest PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class OrderUpdateStatusResponse PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.OrderUpdateStatusResponse)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.OrderUpdateStatusResponse)
+                   */
 {
  public:
   inline OrderUpdateStatusResponse() : OrderUpdateStatusResponse(nullptr) {};
@@ -1616,8 +1626,9 @@ class OrderUpdateStatusResponse PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class StatusRequest PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.StatusRequest)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.StatusRequest)
+                   */
 {
  public:
   inline StatusRequest() : StatusRequest(nullptr) {};
@@ -1818,8 +1829,9 @@ class StatusRequest PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class StatusResponse PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.StatusResponse)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.StatusResponse)
+                   */
 {
  public:
   inline StatusResponse() : StatusResponse(nullptr) {};
@@ -1991,8 +2003,9 @@ class StatusResponse PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class ArriveRequest PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.ArriveRequest)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.ArriveRequest)
+                   */
 {
  public:
   inline ArriveRequest() : ArriveRequest(nullptr) {};
@@ -2188,8 +2201,9 @@ class ArriveRequest PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class ArriveResponse PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.ArriveResponse)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.ArriveResponse)
+                   */
 {
  public:
   inline ArriveResponse() : ArriveResponse(nullptr) {};
@@ -2361,8 +2375,9 @@ class ArriveResponse PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class UpdateVehicleLocationRequest PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.UpdateVehicleLocationRequest)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.UpdateVehicleLocationRequest)
+                   */
 {
  public:
   inline UpdateVehicleLocationRequest()
@@ -2555,8 +2570,9 @@ class UpdateVehicleLocationRequest PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class UpdateVehicleLocationResponse PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.UpdateVehicleLocationResponse)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.UpdateVehicleLocationResponse)
+                   */
 {
  public:
   inline UpdateVehicleLocationResponse()
@@ -2737,8 +2753,9 @@ class UpdateVehicleLocationResponse PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class TripInitRequest PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripInitRequest)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripInitRequest)
+                   */
 {
  public:
   inline TripInitRequest() : TripInitRequest(nullptr) {};
@@ -2958,8 +2975,9 @@ class TripInitRequest PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class TripInitResponse PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripInitResponse)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripInitResponse)
+                   */
 {
  public:
   inline TripInitResponse() : TripInitResponse(nullptr) {};
@@ -3131,8 +3149,9 @@ class TripInitResponse PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class TripMoveRequest PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripMoveRequest)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripMoveRequest)
+                   */
 {
  public:
   inline TripMoveRequest() : TripMoveRequest(nullptr) {};
@@ -3328,8 +3347,9 @@ class TripMoveRequest PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class TripMoveResponse PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripMoveResponse)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.TripMoveResponse)
+                   */
 {
  public:
   inline TripMoveResponse() : TripMoveResponse(nullptr) {};
@@ -3501,8 +3521,9 @@ class TripMoveResponse PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class GatewayCommand PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.GatewayCommand)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.GatewayCommand)
+                   */
 {
  public:
   inline GatewayCommand() : GatewayCommand(nullptr) {};
@@ -3789,8 +3810,9 @@ class GatewayCommand PROTOBUF_FINAL
 // -------------------------------------------------------------------
 
 class VehicleEvent PROTOBUF_FINAL
-    : public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.VehicleEvent)
-                                               */
+    : public ::PROTOBUF_NAMESPACE_ID::
+          Message /* @@protoc_insertion_point(class_definition:vehicle_gateway.VehicleEvent)
+                   */
 {
  public:
   inline VehicleEvent() : VehicleEvent(nullptr) {};

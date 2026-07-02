@@ -1,2 +1,0 @@
-/usr/bin/ar qc libgateway_lib.a application/CMakeFiles/application_lib.dir/trip_orchestrator.cc.o services/CMakeFiles/services_lib.dir/rpc_dispatcher.cc.o services/CMakeFiles/services_lib.dir/mqtt_router.cc.o services/CMakeFiles/services_lib.dir/grpc_server.cc.o services/CMakeFiles/services_lib.dir/auth_services.cc.o services/CMakeFiles/services_lib.dir/vehicle_stream_handler.cc.o transport/mqtt_client/CMakeFiles/mqtt_client_lib.dir/mqtt_client.cpp.o transport/http_client/CMakeFiles/http_client_lib.dir/http_client.cpp.o
-/usr/bin/ranlib libgateway_lib.a

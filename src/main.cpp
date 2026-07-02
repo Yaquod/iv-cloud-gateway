@@ -188,6 +188,7 @@ int main() {
       gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateStatus);
 
   spdlog::info("[DEBUG] calling start NOW");
+
   mqtt.start();
 
   gateway::transport::HttpClient http;
