@@ -174,3 +174,31 @@ TEST(TripOrchestratorTest, HandlesOrderUpdateStatusPayload) {
   EXPECT_TRUE(callback_called);
   EXPECT_EQ(cb_vin, "VIN123");
 }
+
+TEST(TripOrchestratorTest, HandlesTripCancelPayload) {
+  TripOrchestrator orchestrator("VIN123");
+
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool callback_called = false;
+  std::string cb_vin;
+
+  TripCallbacks callbacks;
+  callbacks.on_trip_cancel = [&](const std::string& vin_number,
+                                 int64_t trip_id) {
+    std::lock_guard<std::mutex> lock(mtx);
+    callback_called = true;
+    cb_vin = vin_number;
+    cv.notify_one();
+  };
+  orchestrator.set_callbacks(callbacks);
+
+  nlohmann::json payload = {{"vinNumber", "VIN123"}, {"requestId", 1}};
+  orchestrator.handle_trip_cancel(payload.dump());
+
+  std::unique_lock<std::mutex> lock(mtx);
+  cv.wait_for(lock, std::chrono::seconds(1), [&] { return callback_called; });
+
+  EXPECT_TRUE(callback_called);
+  EXPECT_EQ(cb_vin, "VIN123");
+}

@@ -108,4 +108,17 @@ void TripOrchestrator::handle_order_update_status(const std::string& payload) {
   }
 }
 
+void TripOrchestrator::handle_trip_cancel(const std::string& payload) {
+  auto j = nlohmann::json::parse(payload);
+
+  auto vin = j.at("vinNumber").get<std::string>();
+  auto request_id = j.at("requestId").get<int64_t>();
+
+  spdlog::info("[Trip] TripCancel — vin={} requestId={}", vin, request_id);
+
+  if (trip_callbacks_.on_trip_cancel) {
+    trip_callbacks_.on_trip_cancel(vin, request_id);
+  }
+}
+
 }  // namespace gateway::application

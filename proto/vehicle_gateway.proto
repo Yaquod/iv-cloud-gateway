@@ -141,6 +141,17 @@ message TripMoveResponse {
   string message = 2;
 }
 
+
+message TripCancelRequest{
+string vin_number = 1;
+  int64 request_id = 2;
+}
+
+message TripCancelResponse{
+ bool success = 1;
+  string message = 2;
+}
+
 message GatewayCommand {
   oneof command {
     TripInitRequest trip_init = 1;
@@ -148,6 +159,7 @@ message GatewayCommand {
     TripParkRequest trip_park = 3;
     OrderUpdateLocationRequest order_update_location = 4;
     OrderUpdateStatusRequest order_update_status = 5;
+    TripCancelRequest trip_cancel = 6;
     
   }
 }
@@ -163,5 +175,6 @@ message VehicleEvent {
     StatusRequest     status         = 7;
     ArriveRequest     arrive         = 8;
     UpdateVehicleLocationRequest   location       = 9;
+    TripCancelResponse trip_cancel_ack = 10;
   }
 }

@@ -46,6 +46,10 @@ struct TripCallbacks {
   // TripOrderUpdateStatus received from backend
   // Vehicle should call autoware->update_status() then report status.
   std::function<void(std::string vin_number)> on_order_update_status;
+
+  // TripCancel received from backend
+  // Vehicle should call autoware->cancel() then report cancel status.
+  std::function<void(std::string vin_number, int64_t trip_id)> on_trip_cancel;
 };
 
 class TripOrchestrator {
@@ -89,6 +93,8 @@ class TripOrchestrator {
    * @param payload MQTT Payload sent.
    */
   void handle_order_update_status(const std::string& payload);
+
+  void handle_trip_cancel(const std::string& payload);
 
   int64_t active_trip_id() const { return trip_id_.load(); }
   int64_t active_request_id() const { return request_id_.load(); }
