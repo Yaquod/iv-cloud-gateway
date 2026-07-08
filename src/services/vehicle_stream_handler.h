@@ -181,10 +181,11 @@ class VehicleStreamHandler : public IStreamTag {
           "[Stream] ETA received from Autoware: vin={} reqId={} time={}",  // ADD
           r.vin_number(), r.request_id(), r.time());
       nlohmann::json j;
-      j["vin_number"] = r.vin_number();
-      j["request_id"] = r.request_id();
-      j["estimated_fare"] = r.fare();
-      j["estimated_time"] = r.time();
+      j["vinNumber"] = r.vin_number();
+      j["requestId"] = r.request_id();
+      j["estimatedFare"] = r.fare();
+      j["estimatedTime"] = r.time();
+      j["status"] = r.status();
       publish_(constants::VehicleGatewayConstants::kTopicTripEta, j.dump(),
                [](bool ok, std::string e) {
                  if (!ok)
@@ -197,8 +198,8 @@ class VehicleStreamHandler : public IStreamTag {
       auto& r = ev.status();
       nlohmann::json j;
       j["vinNumber"] = r.vin_number();
-      j["trip_id"] = r.trip_id();
-      j["status"] = r.status();
+      j["tripId"] = r.trip_id();
+      j["tripStatus"] = r.status();
       publish_(constants::VehicleGatewayConstants::kTopicTripStatus, j.dump(),
                [](bool ok, std::string e) {
                  if (!ok) spdlog::error("[Stream] Status failed: {}", e);

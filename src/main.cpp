@@ -73,13 +73,14 @@ int main() {
 
   orchestrator.set_callbacks({
       .on_trip_init =
-          [](int64_t req_id, double s_lat, double s_lon, double e_lat,
-             double e_lon) {
+          [](std::string vin_number, int64_t req_id, double s_lat, double s_lon,
+             double e_lat, double e_lon) {
             spdlog::info("[Gateway] Pushing TripInit reqId={} to stream",
                          req_id);
 
             vehicle_gateway::GatewayCommand cmd;
             auto* init = cmd.mutable_trip_init();
+            init->set_vin_number(vin_number);
             init->set_request_id(req_id);
             init->set_start_lat(s_lat);
             init->set_start_long(s_lon);
@@ -90,12 +91,13 @@ int main() {
           },
 
       .on_trip_move =
-          [](int64_t trip_id, double lat, double lon) {
+          [](std::string vin_number, int64_t trip_id, double lat, double lon) {
             spdlog::info("[Gateway] Pushing TripMove tripId={} to stream",
                          trip_id);
 
             vehicle_gateway::GatewayCommand cmd;
             auto* move = cmd.mutable_trip_move();
+            move->set_vin_number(vin_number);
             move->set_trip_id(trip_id);
             move->set_latitude(lat);
             move->set_longitude(lon);

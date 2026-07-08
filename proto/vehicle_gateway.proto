@@ -25,6 +25,7 @@ message EtaRequest
   int64 request_id = 2;
   double time = 3;
   double fare = 4;
+  string status = 5;
 }
 
 message EtaResponse

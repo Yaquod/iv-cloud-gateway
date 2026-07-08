@@ -132,9 +132,8 @@ TEST_F(MqttClientTest, SubscribeBeforeStartStillRoutesMessage) {
   bool fired = false;
 
   orchestrator.set_callbacks(
-      {.on_trip_init = [&](int64_t, double, double, double, double) {
-        fired = true;
-      }});
+      {.on_trip_init = [&](std::string, int64_t, double, double, double,
+                           double) { fired = true; }});
 
   router.on(gateway::constants::VehicleGatewayConstants::kTopicTripInit,
             [&](const std::string& p) { orchestrator.handle_trip_init(p); });

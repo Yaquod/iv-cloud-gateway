@@ -47,7 +47,7 @@ void TripOrchestrator::handle_trip_init(const std::string& payload) {
       vin, request_id, start_lat, start_lon, end_lat, end_lon);
 
   if (trip_callbacks_.on_trip_init) {
-    trip_callbacks_.on_trip_init(request_id, start_lat, start_lon, end_lat,
+    trip_callbacks_.on_trip_init(vin, request_id, start_lat, start_lon, end_lat,
                                  end_lon);
   }
 }
@@ -67,7 +67,7 @@ void TripOrchestrator::handle_trip_move(const std::string& payload) {
                trip_id, lat, lon);
 
   if (trip_callbacks_.on_trip_move) {
-    trip_callbacks_.on_trip_move(trip_id, lat, lon);
+    trip_callbacks_.on_trip_move(vin, trip_id, lat, lon);
   }
 }
 

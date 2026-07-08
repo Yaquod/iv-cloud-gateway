@@ -37,9 +37,9 @@ TEST(TripOrchestratorTest, HandlesTripInitMqttPayload) {
   double cb_start_lat = 0, cb_start_lon = 0, cb_end_lat = 0, cb_end_lon = 0;
 
   TripCallbacks callbacks;
-  callbacks.on_trip_init = [&](int64_t request_id, double start_lat,
-                               double start_lon, double end_lat,
-                               double end_lon) {
+  callbacks.on_trip_init = [&](std::string vin_number, int64_t request_id,
+                               double start_lat, double start_lon,
+                               double end_lat, double end_lon) {
     std::lock_guard<std::mutex> lock(mtx);
     callback_called = true;
     cb_request_id = request_id;

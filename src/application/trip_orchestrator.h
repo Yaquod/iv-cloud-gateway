@@ -26,13 +26,16 @@ namespace gateway::application {
 struct TripCallbacks {
   // TripInit received from backend.
   // vehicle should call queryEta(start, end) then report ETA
-  std::function<void(int64_t request_id, double start_lat, double start_lon,
-                     double end_lat, double end_lon)>
+  std::function<void(std::string vin_number, int64_t request_id,
+                     double start_lat, double start_lon, double end_lat,
+                     double end_lon)>
       on_trip_init;
 
   // TripMove received from backend
   // Vehicle should call autoware->move() then report status.
-  std::function<void(int64_t trip_id, double lat, double lon)> on_trip_move;
+  std::function<void(std::string vin_number, int64_t trip_id, double lat,
+                     double lon)>
+      on_trip_move;
 
   // TripPark received from backend
   // Vehicle should call autoware->park() then report park status.
