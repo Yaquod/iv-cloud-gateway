@@ -47,7 +47,7 @@ void TripOrchestrator::handle_trip_init(const std::string& payload) {
       vin, request_id, start_lat, start_lon, end_lat, end_lon);
 
   if (trip_callbacks_.on_trip_init) {
-    trip_callbacks_.on_trip_init(request_id, start_lat, start_lon, end_lat,
+    trip_callbacks_.on_trip_init(vin, request_id, start_lat, start_lon, end_lat,
                                  end_lon);
   }
 }
@@ -67,7 +67,57 @@ void TripOrchestrator::handle_trip_move(const std::string& payload) {
                trip_id, lat, lon);
 
   if (trip_callbacks_.on_trip_move) {
-    trip_callbacks_.on_trip_move(trip_id, lat, lon);
+    trip_callbacks_.on_trip_move(vin, trip_id, lat, lon);
+  }
+}
+
+void TripOrchestrator::handle_trip_park(const std::string& payload) {
+  auto j = nlohmann::json::parse(payload);
+
+  auto vin = j.at("vinNumber").get<std::string>();
+  auto lon = j.at("longitude").get<double>();
+  auto lat = j.at("latitude").get<double>();
+
+  spdlog::info("[Trip] TripPark — vin={} pos=({:.6f},{:.6f})", vin, lat, lon);
+
+  if (trip_callbacks_.on_trip_park) {
+    trip_callbacks_.on_trip_park(vin, lon, lat);
+  }
+}
+
+void TripOrchestrator::handle_order_update_location(
+    const std::string& payload) {
+  auto j = nlohmann::json::parse(payload);
+
+  auto vin = j.at("vinNumber").get<std::string>();
+  spdlog::info("[Trip] TripOrderUpdateLocation — vin={}", vin);
+
+  if (trip_callbacks_.on_order_update_location) {
+    trip_callbacks_.on_order_update_location(vin);
+  }
+}
+
+void TripOrchestrator::handle_order_update_status(const std::string& payload) {
+  auto j = nlohmann::json::parse(payload);
+
+  auto vin = j.at("vinNumber").get<std::string>();
+  spdlog::info("[Trip] TripOrderUpdateStatus — vin={}", vin);
+
+  if (trip_callbacks_.on_order_update_status) {
+    trip_callbacks_.on_order_update_status(vin);
+  }
+}
+
+void TripOrchestrator::handle_trip_cancel(const std::string& payload) {
+  auto j = nlohmann::json::parse(payload);
+
+  auto vin = j.at("vinNumber").get<std::string>();
+  auto request_id = j.at("requestId").get<int64_t>();
+
+  spdlog::info("[Trip] TripCancel — vin={} requestId={}", vin, request_id);
+
+  if (trip_callbacks_.on_trip_cancel) {
+    trip_callbacks_.on_trip_cancel(vin, request_id);
   }
 }
 

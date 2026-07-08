@@ -28,13 +28,21 @@ inline const std::string kTopicTripMove = "topic/trip/move";
 inline const std::string kTopicTripEta = "topic/trip/eta";
 inline const std::string kTopicTripStatus = "topic/trip/status";
 inline const std::string kTopicTripArrive = "topic/trip/arrive";
-inline const std::string kTopicUpdateLocation = "topic/update_location";
+inline const std::string kTopicUpdateLocation = "topic/vehicle/update/location";
+inline const std::string kTopicTripPark = "topic/trip/park";
+inline const std::string kTopicOrderUpdateLocation =
+    "topic/update_location/order";
+inline const std::string kTopicOrderUpdateStatus = "topic/update_status/order";
+
+inline const std::string kTopicTripCancel = "topic/trip/cancel";
 
 inline const std::string kBaseUrl = "http://localhost:8000";
 inline const std::string kSignupUrl = kBaseUrl + "/api/auth/admin/signup";
 inline const std::string kVerifyUrl = kBaseUrl + "/api/auth/verify-code";
 inline const std::string kLoginUrl = kBaseUrl + "/api/auth/login";
 inline const std::string kCreateVehicleUrl = kBaseUrl + "/api/vehicles";
+inline const std::string kVehicleLoginUrl =
+    kBaseUrl + "/api/auth/vehicle/login";
 
 inline const std::string kGrpcListenAddr = "0.0.0.0:50051";
 

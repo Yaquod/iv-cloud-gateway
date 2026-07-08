@@ -57,49 +57,108 @@ int main() {
   cfg.admin_first_name = "Admin";
   cfg.admin_last_name = "User";
   cfg.admin_phone = "+1234567890";
-  cfg.verify_code = "123456";
+  cfg.verify_code = "111111";
   cfg.plate_no = "ABC-1234";
   cfg.color = "white";
   cfg.car_company = "Toyota";
   cfg.model = "Prius";
   cfg.seat_no = 4;
+  cfg.start_lat = 35.68677918;
+  cfg.start_lon = 139.69154336;
 
   gateway::transport::MqttClient mqtt(cfg.mqtt_broker, cfg.mqtt_port,
                                       cfg.mqtt_client_id);
 
   gateway::application::TripOrchestrator orchestrator(cfg.vin_number);
 
-  orchestrator.set_callbacks(
-      {.on_trip_init =
-           [](int64_t req_id, double s_lat, double s_lon, double e_lat,
-              double e_lon) {
-             spdlog::info("[Gateway] Pushing TripInit reqId={} to stream",
-                          req_id);
+  orchestrator.set_callbacks({
+      .on_trip_init =
+          [](std::string vin_number, int64_t req_id, double s_lat, double s_lon,
+             double e_lat, double e_lon) {
+            spdlog::info("[Gateway] Pushing TripInit reqId={} to stream",
+                         req_id);
 
-             vehicle_gateway::GatewayCommand cmd;
-             auto* init = cmd.mutable_trip_init();
-             init->set_request_id(req_id);
-             init->set_start_lat(s_lat);
-             init->set_start_long(s_lon);
-             init->set_end_lat(e_lat);
-             init->set_end_long(e_lon);
+            vehicle_gateway::GatewayCommand cmd;
+            auto* init = cmd.mutable_trip_init();
+            init->set_vin_number(vin_number);
+            init->set_request_id(req_id);
+            init->set_start_lat(s_lat);
+            init->set_start_long(s_lon);
+            init->set_end_lat(e_lat);
+            init->set_end_long(e_lon);
 
-             gateway::services::VehicleStreamHandler::push_command(cmd);
-           },
+            gateway::services::VehicleStreamHandler::push_command(cmd);
+          },
 
-       .on_trip_move =
-           [](int64_t trip_id, double lat, double lon) {
-             spdlog::info("[Gateway] Pushing TripMove tripId={} to stream",
-                          trip_id);
+      .on_trip_move =
+          [](std::string vin_number, int64_t trip_id, double lat, double lon) {
+            spdlog::info("[Gateway] Pushing TripMove tripId={} to stream",
+                         trip_id);
 
-             vehicle_gateway::GatewayCommand cmd;
-             auto* move = cmd.mutable_trip_move();
-             move->set_trip_id(trip_id);
-             move->set_latitude(lat);
-             move->set_longitude(lon);
+            vehicle_gateway::GatewayCommand cmd;
+            auto* move = cmd.mutable_trip_move();
+            move->set_vin_number(vin_number);
+            move->set_trip_id(trip_id);
+            move->set_latitude(lat);
+            move->set_longitude(lon);
 
-             gateway::services::VehicleStreamHandler::push_command(cmd);
-           }});
+            gateway::services::VehicleStreamHandler::push_command(cmd);
+          },
+
+      .on_trip_park =
+          [](std::string vin_number, double lon, double lat) {
+            spdlog::info("[Gateway] Pushing TripPark vinNumber={} to stream",
+                         vin_number);
+
+            vehicle_gateway::GatewayCommand cmd;
+            auto* park = cmd.mutable_trip_park();
+            park->set_vin_number(vin_number);
+            park->set_latitude(lat);
+            park->set_longitude(lon);
+
+            gateway::services::VehicleStreamHandler::push_command(cmd);
+          },
+
+      .on_order_update_location =
+          [](std::string vin_number) {
+            spdlog::info(
+                "[Gateway] Pushing OrderUpdateLocation vinNumber={} to stream",
+                vin_number);
+
+            vehicle_gateway::GatewayCommand cmd;
+            auto* update_location = cmd.mutable_order_update_location();
+            update_location->set_vin_number(vin_number);
+
+            gateway::services::VehicleStreamHandler::push_command(cmd);
+          },
+
+      .on_order_update_status =
+          [](std::string vin_number) {
+            spdlog::info(
+                "[Gateway] Pushing OrderUpdateStatus vinNumber={} to stream",
+                vin_number);
+
+            vehicle_gateway::GatewayCommand cmd;
+            auto* update_status = cmd.mutable_order_update_status();
+            update_status->set_vin_number(vin_number);
+
+            gateway::services::VehicleStreamHandler::push_command(cmd);
+          },
+
+      .on_trip_cancel =
+          [](std::string vin_number, int64_t request_id) {
+            spdlog::info("[Gateway] Pushing TripCancel requestId={} to stream",
+                         request_id);
+
+            vehicle_gateway::GatewayCommand cmd;
+            auto* cancel = cmd.mutable_trip_cancel();
+            cancel->set_vin_number(vin_number);
+            cancel->set_request_id(request_id);
+
+            gateway::services::VehicleStreamHandler::push_command(cmd);
+          },
+
+  });
   gateway::services::MqttRouter router;
 
   router.on(gateway::constants::VehicleGatewayConstants::kTopicTripInit,
@@ -112,16 +171,45 @@ int main() {
               orchestrator.handle_trip_move(payload);
             });
 
+  router.on(gateway::constants::VehicleGatewayConstants::kTopicTripPark,
+            [&orchestrator](const std::string& payload) {
+              orchestrator.handle_trip_park(payload);
+            });
+
+  router.on(
+      gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateLocation,
+      [&orchestrator](const std::string& payload) {
+        orchestrator.handle_order_update_location(payload);
+      });
+
+  router.on(
+      gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateStatus,
+      [&orchestrator](const std::string& payload) {
+        orchestrator.handle_order_update_status(payload);
+      });
+
   mqtt.set_message_handler(
       [&router](const std::string& topic, const std::string& payload) {
         router.dispatch(topic, payload);
       });
 
+  router.on(gateway::constants::VehicleGatewayConstants::kTopicTripCancel,
+            [&orchestrator](const std::string& payload) {
+              orchestrator.handle_trip_cancel(payload);
+            });
+
   spdlog::info("[DEBUG] calling subscribe BEFORE start");
   mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripInit);
   mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripMove);
+  mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripPark);
+  mqtt.subscribe(
+      gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateLocation);
+  mqtt.subscribe(
+      gateway::constants::VehicleGatewayConstants::kTopicOrderUpdateStatus);
+  mqtt.subscribe(gateway::constants::VehicleGatewayConstants::kTopicTripCancel);
 
   spdlog::info("[DEBUG] calling start NOW");
+
   mqtt.start();
 
   gateway::transport::HttpClient http;
@@ -131,6 +219,21 @@ int main() {
     spdlog::warn("[Gateway] running without authentication");
   }
   auth.create_vehicle();
+  if (auth.vechile_login()) {
+    nlohmann::json start_loc = {{"vinNumber", cfg.vin_number},
+                                {"latitude", cfg.start_lat},
+                                {"longitude", cfg.start_lon}};
+
+    mqtt.publish(
+        gateway::constants::VehicleGatewayConstants::kTopicUpdateLocation,
+        start_loc.dump(), [](bool ok, std::string e) {
+          if (ok) {
+            spdlog::info("[Gateway] vehicle location published");
+          } else {
+            spdlog::error("[Gateway] failed to publish location: {}", e);
+          }
+        });
+  }
 
   gateway::services::GrpcServer grpc_server(
       cfg.grpc_listen,

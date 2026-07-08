@@ -161,29 +161,52 @@ class VehicleStreamHandler : public IStreamTag {
     if (ev.has_trip_init_ack()) {
       spdlog::info("[Stream] TripInitAck success={}",
                    ev.trip_init_ack().success());
-    } else if (ev.has_eta()) {
+    } else if (ev.has_trip_park_ack()) {
+      spdlog::info("[Stream] TripParkAck success={}",
+                   ev.trip_park_ack().success());
+    } else if (ev.has_order_update_location_ack()) {
+      spdlog::info("[Stream] OrderUpdateLocationAck success={}",
+                   ev.order_update_location_ack().success());
+    } else if (ev.has_order_update_status_ack()) {
+      spdlog::info("[Stream] OrderUpdateStatusAck success={}",
+                   ev.order_update_status_ack().success());
+    } else if (ev.has_trip_cancel_ack()) {
+      spdlog::info("[Stream] TripCancelAck success={}",
+                   ev.trip_cancel_ack().success());
+    }
+
+    else if (ev.has_eta()) {
       auto& r = ev.eta();
+      spdlog::info(
+          "[Stream] ETA received from Autoware: vin={} reqId={} time={}",  // ADD
+          r.vin_number(), r.request_id(), r.time());
       nlohmann::json j;
-      j["vin_number"] = r.vin_number();
-      j["request_id"] = r.request_id();
-      j["estimated_fare"] = r.fare();
-      j["estimated_time"] = r.time();
+      j["vinNumber"] = r.vin_number();
+      j["requestId"] = r.request_id();
+      j["estimatedFare"] = r.fare();
+      j["estimatedTime"] = r.time();
+      j["status"] = r.status();
       publish_(constants::VehicleGatewayConstants::kTopicTripEta, j.dump(),
                [](bool ok, std::string e) {
-                 if (!ok) spdlog::error("[Stream] ETA failed: {}", e);
+                 if (!ok)
+                   spdlog::error("[Stream] ETA failed: {}", e);
+                 else
+                   spdlog::info(
+                       "[Stream] ETA published to MQTT successfully");  // ADD
                });
     } else if (ev.has_status()) {
       auto& r = ev.status();
       nlohmann::json j;
       j["vinNumber"] = r.vin_number();
-      j["trip_id"] = r.trip_id();
-      j["status"] = r.status();
+      j["tripId"] = r.trip_id();
+      j["tripStatus"] = r.status();
       publish_(constants::VehicleGatewayConstants::kTopicTripStatus, j.dump(),
                [](bool ok, std::string e) {
                  if (!ok) spdlog::error("[Stream] Status failed: {}", e);
                });
     } else if (ev.has_arrive()) {
       auto& r = ev.arrive();
+      spdlog::info("[Stream] arrive received from Autoware");
       nlohmann::json j;
       j["vinNumber"] = r.vin_number();
       j["tripId"] = r.trip_id();

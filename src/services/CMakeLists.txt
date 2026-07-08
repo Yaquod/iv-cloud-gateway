@@ -28,6 +28,12 @@ target_link_libraries(services_lib
         nlohmann_json::nlohmann_json
 )
 
-target_compile_options(services_lib PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra>
+target_compile_definitions(services_lib PRIVATE
+    CREDENTIALS_DIR="${CMAKE_SOURCE_DIR}/credentials"
+)
+
+
+
+target_compile_definitions(services_lib PRIVATE
+    PROJECT_ROOT="${CMAKE_SOURCE_DIR}"
 )
