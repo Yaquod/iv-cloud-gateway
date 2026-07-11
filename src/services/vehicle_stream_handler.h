@@ -216,6 +216,7 @@ class VehicleStreamHandler : public IStreamTag {
                [](bool ok, std::string e) {
                  if (!ok) spdlog::error("[Stream] Arrive failed: {}", e);
                });
+
     } else if (ev.has_location()) {
       auto& r = ev.location();
       nlohmann::json j;

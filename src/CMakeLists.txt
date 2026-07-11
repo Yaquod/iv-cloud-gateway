@@ -19,9 +19,12 @@ target_link_libraries(gateway_lib
         OpenSSL::SSL
         OpenSSL::Crypto
         spdlog::spdlog
+        zenohc::lib
+        zenohcxx::zenohc
         yaml-cpp
         PRIVATE
         Threads::Threads
+
 )
 
 target_include_directories(gateway_lib PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/src")

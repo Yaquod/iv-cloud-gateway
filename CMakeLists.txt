@@ -33,6 +33,8 @@ find_package(gRPC REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
+find_package(zenohc REQUIRED)
+find_package(zenohcxx REQUIRED)
 
 message(STATUS "Configuring third-party dependencies...")
 add_subdirectory(third_party)

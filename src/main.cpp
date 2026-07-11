@@ -19,6 +19,8 @@
 
 #include <atomic>
 #include <csignal>
+#include <nlohmann/json.hpp>
+#include <zenoh.hxx>
 
 #include "application/trip_orchestrator.h"
 #include "infra/config.h"
@@ -212,6 +214,44 @@ int main() {
 
   mqtt.start();
 
+  // create zenoh session
+  zenoh::init_log_from_env_or("debug");
+  auto zconfig = zenoh::Config::create_default();
+
+  zconfig.insert_json5("scouting/multicast/enabled", "false");
+  zconfig.insert_json5("transport/shared_memory/enabled", "false");
+
+  zconfig.insert_json5("connect/endpoints", R"(["udp/127.0.0.1:7447"])");
+
+  auto zsession = std::make_shared<zenoh::Session>(
+      zenoh::Session::open(std::move(zconfig)));
+
+  auto location_sub = zsession->declare_subscriber(
+      "autoware/location",
+      [&mqtt, &cfg](const zenoh::Sample& sample) {
+        try {
+          auto j = nlohmann::json::parse(sample.get_payload().as_string());
+
+          nlohmann::json msg = {
+              {"vinNumber", cfg.vin_number},
+              {"latitude", j["latitude"]},
+              {"longitude", j["longitude"]},
+              {"tripId", j["tripId"]},
+
+          };
+
+          mqtt.publish(
+              gateway::constants::VehicleGatewayConstants::kTopicStreamLocation,
+              msg.dump(), [](bool ok, std::string err) {
+                if (!ok)
+                  spdlog::error("[Gateway] MQTT publish failed: {}", err);
+              });
+        } catch (const std::exception& e) {
+          spdlog::warn("[Gateway] Invalid location message: {}", e.what());
+        }
+      },
+      []() {});
+
   gateway::transport::HttpClient http;
   gateway::services::AuthService auth(http, cfg);
 
@@ -251,6 +291,7 @@ int main() {
                cfg.mqtt_broker, cfg.mqtt_port);
 
   grpc_server.wait();
+  zsession.reset();
 
   mqtt.stop();
   spdlog::info("[Gateway] clean exit");
