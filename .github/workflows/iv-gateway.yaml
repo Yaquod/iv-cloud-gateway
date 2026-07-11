@@ -57,6 +57,20 @@ jobs:
             protobuf-compiler-grpc protobuf-compiler \
             ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
 
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+            && export PATH="${HOME}/.cargo/bin:${PATH}" \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
+            && cd /tmp/zenoh-c \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
+            && cd /tmp/zenoh-cpp \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && cd / \
+            && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
+            && rustup self uninstall -y
+
       - name: Configure
         env:
           CC: ${{ matrix.compiler.cc }}
@@ -107,6 +121,20 @@ jobs:
             clang-17 clang++-17 \
             libc++-17-dev libc++abi-17-dev
 
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+            && export PATH="${HOME}/.cargo/bin:${PATH}" \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
+            && cd /tmp/zenoh-c \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
+            && cd /tmp/zenoh-cpp \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && cd / \
+            && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
+            && rustup self uninstall -y
+
       - name: Configure
         env:
           CC: clang-17
@@ -151,6 +179,20 @@ jobs:
             libabsl-dev \
             protobuf-compiler-grpc protobuf-compiler
 
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+            && export PATH="${HOME}/.cargo/bin:${PATH}" \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
+            && cd /tmp/zenoh-c \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
+            && cd /tmp/zenoh-cpp \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && cd / \
+            && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
+            && rustup self uninstall -y
+
       - name: Configure
         env:
           CC: gcc
@@ -189,6 +231,20 @@ jobs:
             libgrpc++-dev libprotobuf-dev \
             libabsl-dev \
             protobuf-compiler-grpc protobuf-compiler
+
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+            && export PATH="${HOME}/.cargo/bin:${PATH}" \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
+            && cd /tmp/zenoh-c \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
+            && cd /tmp/zenoh-cpp \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && cd / \
+            && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
+            && rustup self uninstall -y
 
       - name: Create TSan Suppressions
         run: |
@@ -244,6 +300,20 @@ jobs:
             libabsl-dev \
             protobuf-compiler-grpc protobuf-compiler \
             lcov gcovr
+
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+            && export PATH="${HOME}/.cargo/bin:${PATH}" \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
+            && cd /tmp/zenoh-c \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
+            && cd /tmp/zenoh-cpp \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake --build build --target install --parallel $(nproc) \
+            && cd / \
+            && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
+            && rustup self uninstall -y
 
       - name: Configure
         run: |
