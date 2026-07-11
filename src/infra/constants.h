@@ -35,6 +35,7 @@ inline const std::string kTopicOrderUpdateLocation =
 inline const std::string kTopicOrderUpdateStatus = "topic/update_status/order";
 
 inline const std::string kTopicTripCancel = "topic/trip/cancel";
+inline const std::string kTopicStreamLocation = "topic/trip/stream_location";
 
 inline const std::string kBaseUrl = "http://localhost:8000";
 inline const std::string kSignupUrl = kBaseUrl + "/api/auth/admin/signup";
