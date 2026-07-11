@@ -7,6 +7,10 @@ on:
 
 env:
   BUILD_TYPE: Release
+  ZENOH_PREFIX: ${{ github.workspace }}/.local
+  CMAKE_PREFIX_PATH: ${{ github.workspace }}/.local
+  PKG_CONFIG_PATH: ${{ github.workspace }}/.local/lib/pkgconfig:${{ github.workspace }}/.local/share/pkgconfig
+  LD_LIBRARY_PATH: ${{ github.workspace }}/.local/lib:${{ github.workspace }}/.local/lib64
 
 jobs:
   code-quality:
@@ -61,11 +65,11 @@ jobs:
             && export PATH="${HOME}/.cargo/bin:${PATH}" \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
             && cd /tmp/zenoh-c \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
             && cd /tmp/zenoh-cpp \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && cd / \
             && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
@@ -125,11 +129,11 @@ jobs:
             && export PATH="${HOME}/.cargo/bin:${PATH}" \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
             && cd /tmp/zenoh-c \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
             && cd /tmp/zenoh-cpp \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && cd / \
             && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
@@ -183,11 +187,11 @@ jobs:
             && export PATH="${HOME}/.cargo/bin:${PATH}" \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
             && cd /tmp/zenoh-c \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
             && cd /tmp/zenoh-cpp \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && cd / \
             && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
@@ -236,11 +240,11 @@ jobs:
             && export PATH="${HOME}/.cargo/bin:${PATH}" \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
             && cd /tmp/zenoh-c \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
             && cd /tmp/zenoh-cpp \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && cd / \
             && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
@@ -305,11 +309,11 @@ jobs:
             && export PATH="${HOME}/.cargo/bin:${PATH}" \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git /tmp/zenoh-c \
             && cd /tmp/zenoh-c \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-cpp.git /tmp/zenoh-cpp \
             && cd /tmp/zenoh-cpp \
-            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            && cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${ZENOH_PREFIX}" \
             && cmake --build build --target install --parallel $(nproc) \
             && cd / \
             && rm -rf /tmp/zenoh-c /tmp/zenoh-cpp \
