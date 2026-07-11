@@ -66,7 +66,8 @@
 //   std::map<std::string, std::string> headers = {
 //       {"Content-Type", "application/json"}};
 
-//   auto response = client.Patch("http://httpbin.org/patch", headers, patch_data);
+//   auto response = client.Patch("http://httpbin.org/patch", headers,
+//   patch_data);
 
 //   ASSERT_TRUE(response.success);
 //   ASSERT_EQ(200, response.status_code);
@@ -316,9 +317,9 @@
 //   std::string post_data = R"({"key": "value"})";
 //   std::map<std::string, std::string> headers = {
 //       {"Content-Type", "application/json"}};
-//   auto response = client.Post("https://httpbin.org/post", headers, post_data);
-//   ASSERT_TRUE(response.success);
-//   ASSERT_EQ(200, response.status_code);
+//   auto response = client.Post("https://httpbin.org/post", headers,
+//   post_data); ASSERT_TRUE(response.success); ASSERT_EQ(200,
+//   response.status_code);
 // }
 
 // // Test HTTP GET with large response body
