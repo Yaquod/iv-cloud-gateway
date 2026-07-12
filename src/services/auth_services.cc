@@ -87,8 +87,8 @@ bool AuthService::create_vehicle(bool retry_after_login,
       {"model", config_.model},          {"seats", config_.seat_no}};
 
   auto resp =
-      http_client_.Post(constants::VehicleGatewayConstants::kCreateVehicleUrl,
-                        auth_headers_, body.dump());
+      http_client_.Post(config_.base_url + "/api/vehicles", auth_headers_,
+                        body.dump());
 
   // vechile created successfully = 201
   if (resp.status_code == 201) {
@@ -169,7 +169,7 @@ bool AuthService::login() {
     nlohmann::json body = {{"email", config_.admin_email},
                            {"password", config_.admin_password}};
 
-    auto resp = http_client_.Post(constants::VehicleGatewayConstants::kLoginUrl,
+    auto resp = http_client_.Post(config_.base_url + "/api/auth/login",
                                   json_headers_, body.dump());
 
     if (!resp.success || resp.body.empty()) {
@@ -219,7 +219,7 @@ bool AuthService::vechile_login() {
                            {"apiSecret", vechile_api_secret_}};
 
     auto resp =
-        http_client_.Post(constants::VehicleGatewayConstants::kVehicleLoginUrl,
+        http_client_.Post(config_.base_url + "/api/auth/vehicle/login",
                           json_headers_, body.dump());
 
     if (!resp.success || resp.body.empty()) {
@@ -252,7 +252,7 @@ bool AuthService::verify_code() {
                            {"code", config_.verify_code}};
 
     auto resp =
-        http_client_.Post(constants::VehicleGatewayConstants::kVerifyUrl,
+        http_client_.Post(config_.base_url + "/api/auth/verify-code",
                           json_headers_, body.dump());
 
     if (resp.status_code == 200) {
@@ -279,7 +279,7 @@ bool AuthService::signup() {
                            {"phoneNumber", config_.admin_phone}};
 
     auto resp =
-        http_client_.Post(constants::VehicleGatewayConstants::kSignupUrl,
+        http_client_.Post(config_.base_url + "/api/auth/admin/signup",
                           json_headers_, body.dump());
 
     if (resp.status_code == 201) {

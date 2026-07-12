@@ -37,19 +37,11 @@ inline const std::string kTopicOrderUpdateStatus = "topic/update_status/order";
 inline const std::string kTopicTripCancel = "topic/trip/cancel";
 inline const std::string kTopicStreamLocation = "topic/trip/stream_location";
 
-inline const std::string kBaseUrl = "http://localhost:8000";
-inline const std::string kSignupUrl = kBaseUrl + "/api/auth/admin/signup";
-inline const std::string kVerifyUrl = kBaseUrl + "/api/auth/verify-code";
-inline const std::string kLoginUrl = kBaseUrl + "/api/auth/login";
-inline const std::string kCreateVehicleUrl = kBaseUrl + "/api/vehicles";
-inline const std::string kVehicleLoginUrl =
-    kBaseUrl + "/api/auth/vehicle/login";
-
-inline const std::string kGrpcListenAddr = "0.0.0.0:50051";
-
-inline const std::string kMqttBroker = "localhost";
-inline const uint16_t kMqttPort = 1883;
-inline const std::string kMqttClientId = "vehicle_gateway_client";
+// Deployment config (backend base URL + auth endpoints, MQTT
+// broker/port/client, gRPC listen address) is no longer hardcoded here — it
+// comes from the environment / .env via gateway::Config::from_env(). Auth
+// request paths are built from Config::base_url in AuthService. See
+// .env.example.
 
 }  // namespace VehicleGatewayConstants
 

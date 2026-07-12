@@ -140,6 +140,30 @@ Or directly:
 make test
 ```
 
+## Configuration
+
+The gateway is configured entirely from **environment variables** — nothing is
+hardcoded — so the same binary/image deploys anywhere. `Config::from_env()` reads
+them at startup, optionally seeding from a `.env` file (real environment variables
+take precedence).
+
+```bash
+cp .env.example .env      # then edit values
+```
+
+Key variables (see `.env.example` for the full list):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `BASE_URL` | _(your backend URL)_ | HTTP auth backend |
+| `MQTT_BROKER` / `MQTT_PORT` | `localhost` / `1883` | MQTT broker |
+| `GRPC_LISTEN` | `0.0.0.0:50051` | gRPC server listen address |
+| `ZENOH_CONNECT` | `udp/127.0.0.1:7447` | autoware-agent Zenoh endpoint |
+| `VIN_NUMBER`, `ADMIN_*`, `PLATE_NO`, … | see `.env.example` | vehicle identity / admin bootstrap |
+
+Deploy with Docker by passing the file: `docker run --env-file .env …` (or compose
+`env_file:`). `.env` is gitignored — never commit real secrets.
+
 ## Running the Gateway
 
 After building, the executable will be located in the `build/bin` directory:

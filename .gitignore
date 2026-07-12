@@ -19,3 +19,5 @@ Testing/
 
 config/gateway.local.yaml
 credentials/vehicle_credentials.json    
+# local env / secrets
+.env

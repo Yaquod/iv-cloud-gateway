@@ -46,27 +46,15 @@ int main() {
   spdlog::set_level(spdlog::level::info);
   spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
 
-  // TODO: replace hardcoded values with YAML / env-var loader
-  gateway::Config cfg;
-  cfg.vin_number = "ORIN_NANO_001";
-  cfg.mqtt_broker = "localhost";
-  cfg.mqtt_port = 1883;
-  cfg.mqtt_client_id = "vehicle_gateway";
-  cfg.grpc_listen = "0.0.0.0:50051";
-  cfg.base_url = "http://localhost:8000";
-  cfg.admin_email = "admin@example.com";
-  cfg.admin_password = "password";
-  cfg.admin_first_name = "Admin";
-  cfg.admin_last_name = "User";
-  cfg.admin_phone = "+1234567890";
-  cfg.verify_code = "111111";
-  cfg.plate_no = "ABC-1234";
-  cfg.color = "white";
-  cfg.car_company = "Toyota";
-  cfg.model = "Prius";
-  cfg.seat_no = 4;
-  cfg.start_lat = 35.68677918;
-  cfg.start_lon = 139.69154336;
+  // Configuration from environment variables (optionally seeded from a .env
+  // file — see .env.example). No secrets or endpoints are compiled in; the
+  // backend defaults to the deployed gateway and everything is overridable per
+  // deployment.
+  gateway::Config cfg = gateway::Config::from_env();
+  spdlog::info(
+      "[Gateway] config: backend={} mqtt={}:{} grpc={} zenoh={} vin={}",
+      cfg.base_url, cfg.mqtt_broker, cfg.mqtt_port, cfg.grpc_listen,
+      cfg.zenoh_connect, cfg.vin_number);
 
   gateway::transport::MqttClient mqtt(cfg.mqtt_broker, cfg.mqtt_port,
                                       cfg.mqtt_client_id);
@@ -221,7 +209,7 @@ int main() {
   zconfig.insert_json5("scouting/multicast/enabled", "false");
   zconfig.insert_json5("transport/shared_memory/enabled", "false");
 
-  zconfig.insert_json5("connect/endpoints", R"(["udp/127.0.0.1:7447"])");
+  zconfig.insert_json5("connect/endpoints", "[\"" + cfg.zenoh_connect + "\"]");
 
   auto zsession = std::make_shared<zenoh::Session>(
       zenoh::Session::open(std::move(zconfig)));
