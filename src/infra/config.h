@@ -86,9 +86,8 @@ inline void load_dotenv(const std::string& path) {
     while (!val.empty() && (val.back() == '\r' || val.back() == '\n' ||
                             val.back() == ' ' || val.back() == '\t'))
       val.pop_back();
-    if (val.size() >= 2 &&
-        ((val.front() == '"' && val.back() == '"') ||
-         (val.front() == '\'' && val.back() == '\'')))
+    if (val.size() >= 2 && ((val.front() == '"' && val.back() == '"') ||
+                            (val.front() == '\'' && val.back() == '\'')))
       val = val.substr(1, val.size() - 2);
     if (!key.empty()) setenv(key.c_str(), val.c_str(), 0);
   }

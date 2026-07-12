@@ -37,10 +37,11 @@ inline const std::string kTopicOrderUpdateStatus = "topic/update_status/order";
 inline const std::string kTopicTripCancel = "topic/trip/cancel";
 inline const std::string kTopicStreamLocation = "topic/trip/stream_location";
 
-// Deployment config (backend base URL + auth endpoints, MQTT broker/port/client,
-// gRPC listen address) is no longer hardcoded here — it comes from the
-// environment / .env via gateway::Config::from_env(). Auth request paths are
-// built from Config::base_url in AuthService. See .env.example.
+// Deployment config (backend base URL + auth endpoints, MQTT
+// broker/port/client, gRPC listen address) is no longer hardcoded here — it
+// comes from the environment / .env via gateway::Config::from_env(). Auth
+// request paths are built from Config::base_url in AuthService. See
+// .env.example.
 
 }  // namespace VehicleGatewayConstants
 
