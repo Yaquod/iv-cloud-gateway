@@ -18,7 +18,8 @@
 
 namespace gateway::services {
 
-std::atomic<VehicleStreamHandler*> VehicleStreamHandler::active_{nullptr};
+std::mutex VehicleStreamHandler::clients_mu_;
+std::set<VehicleStreamHandler*> VehicleStreamHandler::clients_;
 std::queue<vehicle_gateway::GatewayCommand>
     VehicleStreamHandler::pending_commands_;
 std::mutex VehicleStreamHandler::pending_mu_;

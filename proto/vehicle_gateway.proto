@@ -153,6 +153,12 @@ message TripCancelResponse{
   string message = 2;
 }
 
+message Heartbeat {
+}
+
+message PickupArrived {
+}
+
 message GatewayCommand {
   oneof command {
     TripInitRequest trip_init = 1;
@@ -161,7 +167,8 @@ message GatewayCommand {
     OrderUpdateLocationRequest order_update_location = 4;
     OrderUpdateStatusRequest order_update_status = 5;
     TripCancelRequest trip_cancel = 6;
-    
+    Heartbeat heartbeat = 7;
+    PickupArrived pickup_arrived = 8;
   }
 }
 
